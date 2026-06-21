@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
-  <!-- Outer arc/chevron -->
-  <path d="M30 95 L65 20 L95 55 L65 95 Z" fill="currentColor" opacity="0.25"/>
-  <!-- Inner arc/chevron -->
-  <path d="M20 95 L55 25 L80 55 L55 85 Z" fill="currentColor" opacity="0.5"/>
-  <!-- Core shape -->
-  <path d="M15 90 L48 30 L70 55 L48 80 Z" fill="currentColor"/>
-</svg>
