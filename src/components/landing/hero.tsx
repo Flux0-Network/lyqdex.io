@@ -1,46 +1,43 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LampContainer } from "@/components/ui/lamp";
-import { Button } from "@/components/ui/moving-border";
 
 export function Hero() {
   return (
-    <LampContainer>
-      <motion.h1
-        initial={{ opacity: 0.5, y: 100 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: 0.3,
-          duration: 0.8,
-          ease: "easeInOut",
-        }}
-        className="mt-8 bg-gradient-to-br from-gray-100 to-gray-400 py-4 bg-clip-text text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl"
-      >
-        Trade Smarter <br /> mit LyqDex
-      </motion.h1>
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
-        className="mt-4 text-center text-gray-400 text-lg max-w-xl"
-      >
-        Die nächste Generation Krypto-Trading. Schnell, sicher und mit
-        professionellen Tools für jeden Trader.
-      </motion.p>
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gray-950 px-4">
+      {/* Gradient orb */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[120px]" />
+      <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[80px]" />
+
       <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.8 }}
-        className="mt-8 flex gap-4"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative z-10 text-center max-w-3xl"
       >
-        <Button
-          borderRadius="1.75rem"
-          className="bg-gray-900 text-white border-emerald-500/20 font-semibold"
-        >
-          Jetzt starten
-        </Button>
+        <div className="inline-block mb-6 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-gray-400">
+          Jetzt in der Beta verfügbar
+        </div>
+        <h1 className="text-5xl md:text-7xl font-semibold tracking-tight text-white leading-[1.1]">
+          Die Zukunft des
+          <br />
+          <span className="bg-gradient-to-r from-violet-400 to-purple-300 bg-clip-text text-transparent">
+            Krypto-Tradings
+          </span>
+        </h1>
+        <p className="mt-6 text-lg text-gray-400 max-w-xl mx-auto leading-relaxed">
+          Schnell, sicher und intuitiv. Professionelle Tools für Spot, Futures
+          und Derivate – gebaut für die nächste Generation Trader.
+        </p>
+        <div className="mt-10 flex gap-4 justify-center">
+          <button className="bg-white text-black font-medium px-6 py-2.5 rounded-full text-sm hover:bg-gray-200 transition">
+            Jetzt starten
+          </button>
+          <button className="border border-white/10 text-gray-300 font-medium px-6 py-2.5 rounded-full text-sm hover:bg-white/5 transition">
+            Mehr erfahren
+          </button>
+        </div>
       </motion.div>
-    </LampContainer>
+    </section>
   );
 }
