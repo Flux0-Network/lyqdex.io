@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 export function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-gray-950/60 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold text-white tracking-tight">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
+          <Image src="/logo.svg" alt="LyqDex" width={28} height={28} className="invert" />
           LyqDex
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
