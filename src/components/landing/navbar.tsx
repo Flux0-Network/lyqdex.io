@@ -31,12 +31,12 @@ export function Navbar() {
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            <button className="text-sm text-gray-300 hover:text-white transition">
+            <Link href="/login" className="text-sm text-gray-300 hover:text-white transition">
               Anmelden
-            </button>
-            <button className="text-sm bg-white text-black font-medium px-4 py-1.5 rounded-full transition hover:bg-gray-200">
+            </Link>
+            <Link href="/register" className="text-sm bg-white text-black font-medium px-4 py-1.5 rounded-full transition hover:bg-gray-200">
               Registrieren
-            </button>
+            </Link>
             <button
               onClick={() => setShowQr(!showQr)}
               className="ml-1 p-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition"
