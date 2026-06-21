@@ -20,13 +20,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: existing } = await supabase
+  const { data: existingUsers } = await supabase
     .from("users")
     .select("id")
-    .eq("email", email)
-    .single();
+    .eq("email", email);
 
-  if (existing) {
+  if (existingUsers && existingUsers.length > 0) {
     return NextResponse.json(
       { error: "Diese Email ist bereits registriert." },
       { status: 409 }
@@ -41,9 +40,10 @@ export async function POST(req: NextRequest) {
     .select("id, email, name")
     .single();
 
-  if (error) {
+  if (error || !user) {
+    console.error("Supabase insert error:", error);
     return NextResponse.json(
-      { error: "Registrierung fehlgeschlagen." },
+      { error: "Registrierung fehlgeschlagen: " + (error?.message || "Unbekannt") },
       { status: 500 }
     );
   }

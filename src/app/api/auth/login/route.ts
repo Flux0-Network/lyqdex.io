@@ -13,11 +13,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: user } = await supabase
+  const { data: users } = await supabase
     .from("users")
     .select("id, email, name, password")
-    .eq("email", email)
-    .single();
+    .eq("email", email);
+
+  const user = users?.[0];
 
   if (!user) {
     return NextResponse.json(
