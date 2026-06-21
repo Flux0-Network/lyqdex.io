@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -13,8 +13,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const db = getDb();
-  const user = await db.user.findUnique({ where: { email } });
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, email, name, password")
+    .eq("email", email)
+    .single();
+
   if (!user) {
     return NextResponse.json(
       { error: "Ungültige Anmeldedaten." },
@@ -32,7 +36,9 @@ export async function POST(req: NextRequest) {
 
   const token = signToken({ id: user.id, email: user.email });
 
-  const res = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } });
+  const res = NextResponse.json({
+    user: { id: user.id, email: user.email, name: user.name },
+  });
   res.cookies.set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const db = getDb();
-  const existing = await db.user.findUnique({ where: { email } });
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .single();
+
   if (existing) {
     return NextResponse.json(
       { error: "Diese Email ist bereits registriert." },
@@ -30,13 +34,23 @@ export async function POST(req: NextRequest) {
   }
 
   const hashed = await bcrypt.hash(password, 12);
-  const user = await db.user.create({
-    data: { email, password: hashed, name: name || null },
-  });
+
+  const { data: user, error } = await supabase
+    .from("users")
+    .insert({ email, password: hashed, name: name || null })
+    .select("id, email, name")
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Registrierung fehlgeschlagen." },
+      { status: 500 }
+    );
+  }
 
   const token = signToken({ id: user.id, email: user.email });
 
-  const res = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } });
+  const res = NextResponse.json({ user });
   res.cookies.set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

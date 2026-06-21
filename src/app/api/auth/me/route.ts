@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDb } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
   const session = await getSession();
@@ -8,11 +8,11 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  const db = getDb();
-  const user = await db.user.findUnique({
-    where: { id: session.id },
-    select: { id: true, email: true, name: true, createdAt: true },
-  });
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, email, name, created_at")
+    .eq("id", session.id)
+    .single();
 
   if (!user) {
     return NextResponse.json({ user: null }, { status: 401 });
