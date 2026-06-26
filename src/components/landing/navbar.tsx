@@ -14,7 +14,6 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
             <Image src="/icon_logo.png" alt="LyqDex" width={28} height={28} />
-            LyqDex
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
             <Link href="#" className="hover:text-white transition">
