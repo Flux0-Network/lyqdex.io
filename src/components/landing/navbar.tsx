@@ -32,10 +32,10 @@ export function Navbar() {
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login" className="text-sm text-gray-300 hover:text-white transition">
-              Anmelden
+              Wallet verbinden
             </Link>
             <Link href="/register" className="text-sm bg-white text-black font-medium px-4 py-1.5 rounded-full transition hover:bg-gray-200">
-              Registrieren
+              Wallet erstellen
             </Link>
             <button
               onClick={() => setShowQr(!showQr)}

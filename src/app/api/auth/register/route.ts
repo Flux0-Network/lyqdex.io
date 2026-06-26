@@ -1,50 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
+import { generateWalletAddress, generateSeedPhrase, hashSeedPhrase } from "@/lib/wallet";
 
 const DEFAULT_CURRENCIES = ["USDT", "BTC", "ETH"];
 
-export async function POST(req: NextRequest) {
-  const { email, password, name } = await req.json();
-
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: "Email und Passwort sind erforderlich." },
-      { status: 400 }
-    );
-  }
-
-  if (password.length < 8) {
-    return NextResponse.json(
-      { error: "Passwort muss mindestens 8 Zeichen lang sein." },
-      { status: 400 }
-    );
-  }
-
-  const { data: existingUsers } = await supabase
-    .from("users")
-    .select("id")
-    .eq("email", email);
-
-  if (existingUsers && existingUsers.length > 0) {
-    return NextResponse.json(
-      { error: "Diese Email ist bereits registriert." },
-      { status: 409 }
-    );
-  }
-
-  const hashed = await bcrypt.hash(password, 12);
+export async function POST() {
+  const address = generateWalletAddress();
+  const seedPhrase = generateSeedPhrase();
+  const seedHash = hashSeedPhrase(seedPhrase);
 
   const { data: user, error } = await supabase
     .from("users")
-    .insert({ email, password: hashed, name: name || null })
-    .select("id, email, name")
+    .insert({ wallet_address: address, seed_hash: seedHash })
+    .select("id, wallet_address")
     .single();
 
   if (error || !user) {
     return NextResponse.json(
-      { error: "Registrierung fehlgeschlagen: " + (error?.message || "Unbekannt") },
+      { error: "Wallet konnte nicht erstellt werden." },
       { status: 500 }
     );
   }
@@ -56,9 +30,12 @@ export async function POST(req: NextRequest) {
   }));
   await supabase.from("wallets").insert(wallets);
 
-  const token = signToken({ id: user.id, email: user.email });
+  const token = signToken({ id: user.id, address: user.wallet_address });
 
-  const res = NextResponse.json({ user });
+  const res = NextResponse.json({
+    user: { id: user.id, address: user.wallet_address },
+    seedPhrase,
+  });
   res.cookies.set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

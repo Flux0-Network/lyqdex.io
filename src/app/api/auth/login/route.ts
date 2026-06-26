@@ -1,44 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
+import { hashSeedPhrase } from "@/lib/wallet";
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
+  const { seedPhrase } = await req.json();
 
-  if (!email || !password) {
+  if (!seedPhrase) {
     return NextResponse.json(
-      { error: "Email und Passwort sind erforderlich." },
+      { error: "Seed Phrase ist erforderlich." },
       { status: 400 }
     );
   }
 
+  const seedHash = hashSeedPhrase(seedPhrase.trim().toLowerCase());
+
   const { data: users } = await supabase
     .from("users")
-    .select("id, email, name, password")
-    .eq("email", email);
+    .select("id, wallet_address")
+    .eq("seed_hash", seedHash);
 
   const user = users?.[0];
 
   if (!user) {
     return NextResponse.json(
-      { error: "Ungültige Anmeldedaten." },
+      { error: "Ungültige Seed Phrase." },
       { status: 401 }
     );
   }
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) {
-    return NextResponse.json(
-      { error: "Ungültige Anmeldedaten." },
-      { status: 401 }
-    );
-  }
-
-  const token = signToken({ id: user.id, email: user.email });
+  const token = signToken({ id: user.id, address: user.wallet_address });
 
   const res = NextResponse.json({
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, address: user.wallet_address },
   });
   res.cookies.set("token", token, {
     httpOnly: true,

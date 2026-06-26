@@ -8,8 +8,7 @@ import { IconWallet, IconChevronDown, IconLogout, IconUser, IconChartBar } from 
 
 interface User {
   id: string;
-  email: string;
-  name?: string;
+  wallet_address: string;
 }
 
 export function AppNavbar() {
@@ -59,7 +58,7 @@ export function AppNavbar() {
               <div className="h-6 w-6 rounded-full bg-violet-500/20 flex items-center justify-center">
                 <IconUser className="h-3.5 w-3.5 text-violet-400" />
               </div>
-              <span className="hidden sm:inline">{user.name || user.email}</span>
+              <span className="hidden sm:inline font-mono text-[11px]">{user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}</span>
               <IconChevronDown className="h-3 w-3" />
             </button>
 
@@ -68,7 +67,7 @@ export function AppNavbar() {
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 top-full mt-2 z-50 w-48 bg-gray-900 border border-white/10 rounded-xl py-1 shadow-xl">
                   <div className="px-3 py-2 border-b border-white/5">
-                    <div className="text-xs text-white font-medium truncate">{user.email}</div>
+                    <div className="text-[11px] text-white font-mono truncate">{user.wallet_address}</div>
                   </div>
                   <Link
                     href="/wallet"
