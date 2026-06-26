@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
 
+const DEFAULT_CURRENCIES = ["USDT", "BTC", "ETH"];
+
 export async function POST(req: NextRequest) {
   const { email, password, name } = await req.json();
 
@@ -41,12 +43,18 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !user) {
-    console.error("Supabase insert error:", error);
     return NextResponse.json(
       { error: "Registrierung fehlgeschlagen: " + (error?.message || "Unbekannt") },
       { status: 500 }
     );
   }
+
+  const wallets = DEFAULT_CURRENCIES.map((currency) => ({
+    user_id: user.id,
+    currency,
+    balance: 0,
+  }));
+  await supabase.from("wallets").insert(wallets);
 
   const token = signToken({ id: user.id, email: user.email });
 
