@@ -36,7 +36,7 @@ export default function RegisterPage() {
         setError(data.error);
         return;
       }
-      router.push("/portfolio");
+      router.push("/wallet");
     } catch {
       setError("Ein Fehler ist aufgetreten.");
     } finally {

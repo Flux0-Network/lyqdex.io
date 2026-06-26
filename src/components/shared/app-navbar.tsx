@@ -43,9 +43,9 @@ export function AppNavbar() {
               <IconChartBar className="h-3.5 w-3.5" />
               Trading
             </Link>
-            <Link href="/portfolio" className="hover:text-white transition flex items-center gap-1">
+            <Link href="/wallet" className="hover:text-white transition flex items-center gap-1">
               <IconWallet className="h-3.5 w-3.5" />
-              Portfolio
+              Wallet
             </Link>
           </div>
         </div>
@@ -71,7 +71,7 @@ export function AppNavbar() {
                     <div className="text-xs text-white font-medium truncate">{user.email}</div>
                   </div>
                   <Link
-                    href="/portfolio"
+                    href="/wallet"
                     className="flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 transition"
                     onClick={() => setMenuOpen(false)}
                   >
