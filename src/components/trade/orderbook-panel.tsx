@@ -38,9 +38,6 @@ export function OrderbookPanel() {
 
   return (
     <div className="h-full flex flex-col text-[11px]">
-      <div className="px-3 py-2 border-b border-white/5 font-semibold text-xs text-white">
-        Orderbuch
-      </div>
       <div className="grid grid-cols-3 gap-2 px-3 py-1 text-gray-500 border-b border-white/5">
         <div>Preis</div>
         <div className="text-right">Menge</div>

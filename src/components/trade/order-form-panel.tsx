@@ -1,20 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function OrderFormPanel() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<"limit" | "market">("limit");
-  const [price, setPrice] = useState("43251.20");
+  const [price, setPrice] = useState("");
   const [amount, setAmount] = useState("");
+
+  useEffect(() => {
+    fetch("/api/market?symbol=BTCUSDT")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ticker?.price) setPrice(parseFloat(d.ticker.price).toFixed(2));
+      })
+      .catch(() => {});
+  }, []);
 
   const total = price && amount ? (parseFloat(price) * parseFloat(amount)).toFixed(2) : "0.00";
 
   return (
     <div className="h-full flex flex-col text-xs">
-      <div className="px-3 py-2 border-b border-white/5 font-semibold text-xs text-white">
-        Order
-      </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         <div className="grid grid-cols-2 gap-1 bg-gray-900 rounded-lg p-0.5">
           <button

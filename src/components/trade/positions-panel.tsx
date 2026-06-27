@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Position {
   id: string;
@@ -9,41 +9,43 @@ interface Position {
   size: number;
   entryPrice: number;
   markPrice: number;
-  pnl: number;
-  pnlPercent: number;
   leverage: number;
 }
-
-const DEMO_POSITIONS: Position[] = [
-  {
-    id: "1",
-    pair: "BTC/USDT",
-    side: "long",
-    size: 0.05,
-    entryPrice: 42800,
-    markPrice: 43251.2,
-    pnl: 22.56,
-    pnlPercent: 1.05,
-    leverage: 10,
-  },
-  {
-    id: "2",
-    pair: "ETH/USDT",
-    side: "short",
-    size: 1.2,
-    entryPrice: 3420,
-    markPrice: 3385.5,
-    pnl: 41.4,
-    pnlPercent: 1.01,
-    leverage: 5,
-  },
-];
 
 type Tab = "positions" | "orders" | "history";
 
 export function PositionsPanel() {
   const [tab, setTab] = useState<Tab>("positions");
-  const positions = DEMO_POSITIONS;
+  const [positions, setPositions] = useState<Position[]>([]);
+
+  useEffect(() => {
+    fetch("/api/market?symbol=BTCUSDT")
+      .then((r) => r.json())
+      .then((d) => {
+        const btcPrice = parseFloat(d.ticker?.price || "60000");
+        setPositions([
+          {
+            id: "1",
+            pair: "BTC/USDT",
+            side: "long",
+            size: 0.05,
+            entryPrice: +(btcPrice * 0.985).toFixed(2),
+            markPrice: btcPrice,
+            leverage: 10,
+          },
+          {
+            id: "2",
+            pair: "ETH/USDT",
+            side: "short",
+            size: 1.2,
+            entryPrice: 3420,
+            markPrice: 3385.5,
+            leverage: 5,
+          },
+        ]);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="h-full flex flex-col text-[11px]">
@@ -77,29 +79,35 @@ export function PositionsPanel() {
                 </tr>
               </thead>
               <tbody>
-                {positions.map((p) => (
-                  <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-3 py-1.5">
-                      <span className="text-white font-medium">{p.pair}</span>
-                      <span className="ml-1 text-[10px] text-gray-500">{p.leverage}x</span>
-                    </td>
-                    <td className={`px-2 py-1.5 ${p.side === "long" ? "text-emerald-400" : "text-red-400"}`}>
-                      {p.side === "long" ? "Long" : "Short"}
-                    </td>
-                    <td className="px-2 py-1.5 text-right text-gray-300">{p.size}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-300">{p.entryPrice.toLocaleString("de-DE")}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-300">{p.markPrice.toLocaleString("de-DE")}</td>
-                    <td className={`px-2 py-1.5 text-right ${p.pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {p.pnl >= 0 ? "+" : ""}{p.pnl.toFixed(2)} $
-                      <div className="text-[10px]">{p.pnl >= 0 ? "+" : ""}{p.pnlPercent.toFixed(2)}%</div>
-                    </td>
-                    <td className="px-3 py-1.5 text-right">
-                      <button className="text-[10px] text-red-400 hover:text-red-300 border border-red-500/20 rounded px-1.5 py-0.5">
-                        Schließen
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {positions.map((p) => {
+                  const pnl = p.side === "long"
+                    ? (p.markPrice - p.entryPrice) * p.size
+                    : (p.entryPrice - p.markPrice) * p.size;
+                  const pnlPct = ((pnl / (p.entryPrice * p.size)) * 100) * p.leverage;
+                  return (
+                    <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="px-3 py-1.5">
+                        <span className="text-white font-medium">{p.pair}</span>
+                        <span className="ml-1 text-[10px] text-gray-500">{p.leverage}x</span>
+                      </td>
+                      <td className={`px-2 py-1.5 ${p.side === "long" ? "text-emerald-400" : "text-red-400"}`}>
+                        {p.side === "long" ? "Long" : "Short"}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-gray-300">{p.size}</td>
+                      <td className="px-2 py-1.5 text-right text-gray-300">{p.entryPrice.toLocaleString("de-DE")}</td>
+                      <td className="px-2 py-1.5 text-right text-gray-300">{p.markPrice.toLocaleString("de-DE")}</td>
+                      <td className={`px-2 py-1.5 text-right ${pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {pnl >= 0 ? "+" : ""}{pnl.toFixed(2)} $
+                        <div className="text-[10px]">{pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%</div>
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        <button className="text-[10px] text-red-400 hover:text-red-300 border border-red-500/20 rounded px-1.5 py-0.5">
+                          Schließen
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
