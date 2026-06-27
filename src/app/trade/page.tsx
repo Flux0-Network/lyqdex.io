@@ -8,6 +8,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook-panel";
 import { TradesPanel } from "@/components/trade/trades-panel";
 import { OrderFormPanel } from "@/components/trade/order-form-panel";
 import { WalletPanel } from "@/components/trade/wallet-panel";
+import { PositionsPanel } from "@/components/trade/positions-panel";
 import { IconMaximize, IconMinimize } from "@tabler/icons-react";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -17,6 +18,7 @@ const defaultLayouts = {
     { i: "chart", x: 0, y: 0, w: 8, h: 12, minW: 4, minH: 6 },
     { i: "orderbook", x: 8, y: 0, w: 2, h: 12, minW: 2, minH: 6 },
     { i: "orderform", x: 10, y: 0, w: 2, h: 12, minW: 2, minH: 8 },
+    { i: "positions", x: 0, y: 12, w: 8, h: 6, minW: 4, minH: 4 },
     { i: "trades", x: 8, y: 12, w: 2, h: 8, minW: 2, minH: 4 },
     { i: "wallet", x: 10, y: 12, w: 2, h: 8, minW: 2, minH: 4 },
   ],
@@ -24,15 +26,17 @@ const defaultLayouts = {
     { i: "chart", x: 0, y: 0, w: 7, h: 10, minW: 3, minH: 5 },
     { i: "orderbook", x: 7, y: 0, w: 3, h: 10, minW: 2, minH: 5 },
     { i: "orderform", x: 0, y: 10, w: 4, h: 10, minW: 2, minH: 6 },
+    { i: "positions", x: 0, y: 20, w: 10, h: 6, minW: 4, minH: 4 },
     { i: "trades", x: 4, y: 10, w: 3, h: 10, minW: 2, minH: 4 },
     { i: "wallet", x: 7, y: 10, w: 3, h: 10, minW: 2, minH: 4 },
   ],
   sm: [
     { i: "chart", x: 0, y: 0, w: 6, h: 8, minW: 3, minH: 5 },
     { i: "orderform", x: 0, y: 8, w: 6, h: 8, minW: 2, minH: 6 },
-    { i: "orderbook", x: 0, y: 16, w: 3, h: 8, minW: 2, minH: 5 },
-    { i: "trades", x: 3, y: 16, w: 3, h: 8, minW: 2, minH: 4 },
-    { i: "wallet", x: 0, y: 24, w: 6, h: 6, minW: 2, minH: 4 },
+    { i: "positions", x: 0, y: 16, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: "orderbook", x: 0, y: 22, w: 3, h: 8, minW: 2, minH: 5 },
+    { i: "trades", x: 3, y: 22, w: 3, h: 8, minW: 2, minH: 4 },
+    { i: "wallet", x: 0, y: 30, w: 6, h: 6, minW: 2, minH: 4 },
   ],
 };
 
@@ -40,6 +44,7 @@ const panelConfig: Record<string, { title: string; component: React.ComponentTyp
   chart: { title: "Chart", component: ChartPanel },
   orderbook: { title: "Orderbuch", component: OrderbookPanel },
   orderform: { title: "Order", component: OrderFormPanel },
+  positions: { title: "Positionen", component: PositionsPanel },
   trades: { title: "Trades", component: TradesPanel },
   wallet: { title: "Wallet", component: WalletPanel },
 };
