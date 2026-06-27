@@ -1,27 +1,30 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
-function generateTrades(count: number) {
-  const trades = [];
-  const basePrice = 43251.20;
-  for (let i = 0; i < count; i++) {
-    const side = Math.random() > 0.5 ? "buy" : "sell";
-    const price = basePrice + (Math.random() - 0.5) * 30;
-    const amount = Math.random() * 1.5 + 0.001;
-    const time = new Date(Date.now() - i * (Math.random() * 5000 + 1000));
-    trades.push({
-      side,
-      price: price.toFixed(2),
-      amount: amount.toFixed(4),
-      time: time.toLocaleTimeString("de-DE"),
-    });
-  }
-  return trades;
+interface Trade {
+  price: string;
+  amount: string;
+  side: "buy" | "sell";
+  time: number;
 }
 
 export function TradesPanel() {
-  const trades = useMemo(() => generateTrades(30), []);
+  const [trades, setTrades] = useState<Trade[]>([]);
+
+  useEffect(() => {
+    function load() {
+      fetch("/api/market?symbol=BTCUSDT")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.trades) setTrades(d.trades);
+        })
+        .catch(() => {});
+    }
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="h-full flex flex-col text-[11px]">
@@ -37,10 +40,12 @@ export function TradesPanel() {
         {trades.map((t, i) => (
           <div key={i} className="grid grid-cols-3 gap-2 px-3 py-0.5">
             <div className={t.side === "buy" ? "text-emerald-400" : "text-red-400"}>
-              {t.price}
+              {parseFloat(t.price).toLocaleString("de-DE", { minimumFractionDigits: 2 })}
             </div>
-            <div className="text-right text-gray-400">{t.amount}</div>
-            <div className="text-right text-gray-500">{t.time}</div>
+            <div className="text-right text-gray-400">{parseFloat(t.amount).toFixed(4)}</div>
+            <div className="text-right text-gray-500">
+              {new Date(t.time).toLocaleTimeString("de-DE")}
+            </div>
           </div>
         ))}
       </div>

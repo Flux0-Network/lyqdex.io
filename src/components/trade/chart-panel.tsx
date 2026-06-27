@@ -1,13 +1,34 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, CandlestickSeries } from "lightweight-charts";
+
+interface MarketData {
+  ticker: { price: string; change: string; high: string; low: string; volume: string };
+  candles: { time: number; open: number; high: number; low: number; close: number }[];
+}
 
 export function ChartPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<MarketData | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    fetch("/api/market?symbol=BTCUSDT")
+      .then((r) => r.json())
+      .then((d) => setData(d))
+      .catch(() => {});
+
+    const interval = setInterval(() => {
+      fetch("/api/market?symbol=BTCUSDT")
+        .then((r) => r.json())
+        .then((d) => setData(d))
+        .catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current || !data?.candles) return;
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -36,19 +57,7 @@ export function ChartPanel() {
       wickUpColor: "#34d399",
     });
 
-    const now = Math.floor(Date.now() / 1000);
-    const data = [];
-    let price = 43250;
-    for (let i = 200; i >= 0; i--) {
-      const open = price + (Math.random() - 0.5) * 500;
-      const close = open + (Math.random() - 0.5) * 400;
-      const high = Math.max(open, close) + Math.random() * 200;
-      const low = Math.min(open, close) - Math.random() * 200;
-      price = close;
-      data.push({ time: now - i * 3600, open, high, low, close });
-    }
-
-    candleSeries.setData(data as Parameters<typeof candleSeries.setData>[0]);
+    candleSeries.setData(data.candles as Parameters<typeof candleSeries.setData>[0]);
     chart.timeScale().fitContent();
 
     const observer = new ResizeObserver(() => {
@@ -65,14 +74,29 @@ export function ChartPanel() {
       observer.disconnect();
       chart.remove();
     };
-  }, []);
+  }, [data]);
+
+  const price = data?.ticker?.price ? parseFloat(data.ticker.price) : 0;
+  const change = data?.ticker?.change ? parseFloat(data.ticker.change) : 0;
+  const isUp = change >= 0;
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-3 px-3 py-2 border-b border-white/5 text-xs">
         <span className="font-semibold text-white">BTC/USDT</span>
-        <span className="text-emerald-400">43,251.20</span>
-        <span className="text-emerald-400 text-[10px]">+2.34%</span>
+        <span className={isUp ? "text-emerald-400" : "text-red-400"}>
+          {price ? price.toLocaleString("de-DE", { minimumFractionDigits: 2 }) : "—"}
+        </span>
+        <span className={`text-[10px] ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+          {change ? `${isUp ? "+" : ""}${change.toFixed(2)}%` : ""}
+        </span>
+        {data?.ticker && (
+          <div className="hidden lg:flex items-center gap-3 ml-auto text-[10px] text-gray-500">
+            <span>H: {parseFloat(data.ticker.high).toLocaleString("de-DE")}</span>
+            <span>L: {parseFloat(data.ticker.low).toLocaleString("de-DE")}</span>
+            <span>Vol: {parseFloat(data.ticker.volume).toLocaleString("de-DE", { maximumFractionDigits: 0 })}</span>
+          </div>
+        )}
       </div>
       <div ref={containerRef} className="flex-1 min-h-0" />
     </div>
