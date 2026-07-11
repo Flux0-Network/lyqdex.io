@@ -29,13 +29,10 @@ export function OrderFormPanel() {
       amount: parseFloat(amount),
       time: Date.now(),
     };
-    // Save to localStorage
     const existing = JSON.parse(localStorage.getItem("lyqdex_trades") || "[]");
     existing.push(trade);
     localStorage.setItem("lyqdex_trades", JSON.stringify(existing.slice(-100)));
-    // Notify chart
     window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: trade }));
-    // Reset amount, show flash
     setAmount("");
     setConfirmed(true);
     setTimeout(() => setConfirmed(false), 1500);
@@ -43,7 +40,8 @@ export function OrderFormPanel() {
 
   return (
     <div className="h-full flex flex-col text-xs">
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* Always-visible top: buy/sell toggle + order type */}
+      <div className="shrink-0 px-3 pt-3 pb-2 space-y-2 border-b border-white/[0.05]">
         <div className="grid grid-cols-2 gap-1 bg-gray-900 rounded-lg p-0.5">
           <button
             onClick={() => setSide("buy")}
@@ -62,22 +60,24 @@ export function OrderFormPanel() {
             Verkaufen
           </button>
         </div>
-
         <div className="flex gap-2">
           <button
             onClick={() => setOrderType("limit")}
-            className={`text-[11px] px-2 py-1 rounded ${orderType === "limit" ? "bg-white/10 text-white" : "text-gray-500"}`}
+            className={`text-[11px] px-2 py-1 rounded transition ${orderType === "limit" ? "bg-white/10 text-white" : "text-gray-500"}`}
           >
             Limit
           </button>
           <button
             onClick={() => setOrderType("market")}
-            className={`text-[11px] px-2 py-1 rounded ${orderType === "market" ? "bg-white/10 text-white" : "text-gray-500"}`}
+            className={`text-[11px] px-2 py-1 rounded transition ${orderType === "market" ? "bg-white/10 text-white" : "text-gray-500"}`}
           >
             Market
           </button>
         </div>
+      </div>
 
+      {/* Scrollable fields */}
+      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-3 space-y-3">
         {orderType === "limit" && (
           <div>
             <label className="text-gray-500 text-[11px]">Preis (USDT)</label>
