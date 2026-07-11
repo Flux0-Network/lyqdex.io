@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-gray-950 border-t border-white/5 py-12 px-6">
+    <footer className="bg-black border-t border-white/[0.06] py-12 px-6">
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div>
-          <h4 className="font-medium text-white mb-3">Produkte</h4>
+          <h4 className="font-semibold text-white mb-3">Produkte</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-gray-300 transition">Spot Trading</Link></li>
             <li><Link href="#" className="hover:text-gray-300 transition">Futures</Link></li>
@@ -14,7 +14,7 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="font-medium text-white mb-3">Support</h4>
+          <h4 className="font-semibold text-white mb-3">Support</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-gray-300 transition">Hilfe-Center</Link></li>
             <li><Link href="#" className="hover:text-gray-300 transition">API Docs</Link></li>
@@ -22,7 +22,7 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="font-medium text-white mb-3">Unternehmen</h4>
+          <h4 className="font-semibold text-white mb-3">Unternehmen</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-gray-300 transition">Über uns</Link></li>
             <li><Link href="#" className="hover:text-gray-300 transition">Karriere</Link></li>
@@ -30,7 +30,7 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="font-medium text-white mb-3">Rechtliches</h4>
+          <h4 className="font-semibold text-white mb-3">Rechtliches</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-gray-300 transition">AGB</Link></li>
             <li><Link href="#" className="hover:text-gray-300 transition">Datenschutz</Link></li>
@@ -38,8 +38,8 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="max-w-5xl mx-auto mt-10 pt-6 border-t border-white/5 text-center text-gray-600 text-xs">
-        &copy; 2024 LyqDex. Alle Rechte vorbehalten.
+      <div className="max-w-5xl mx-auto mt-10 pt-6 border-t border-white/[0.06] text-center text-gray-600 text-xs">
+        &copy; 2025 LyqDex. Alle Rechte vorbehalten.
       </div>
     </footer>
   );
