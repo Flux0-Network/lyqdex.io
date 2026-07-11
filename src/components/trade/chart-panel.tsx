@@ -198,7 +198,7 @@ export function ChartPanel() {
           </button>
         ))}
         <div className="ml-auto flex items-center border border-white/[0.07] rounded overflow-hidden">
-          {["Original", "TradingView", "Depth"].map((t) => (
+          {["Original", "Depth"].map((t) => (
             <button
               key={t}
               className={`px-2.5 py-0.5 text-[11px] border-r border-white/[0.06] last:border-r-0 transition ${
