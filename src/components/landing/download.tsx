@@ -11,7 +11,7 @@ const platforms = [
 
 export function Download() {
   return (
-    <section className="py-32 px-4 bg-white dark:bg-[#080910]">
+    <section className="py-32 px-4 bg-white dark:bg-[#0a0b0e]">
       <div className="max-w-4xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

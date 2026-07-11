@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 export function Hero() {
   return (
-    <section className="relative bg-white dark:bg-[#080910] overflow-hidden pt-24 min-h-screen">
+    <section className="relative bg-white dark:bg-[#0a0b0e] overflow-hidden pt-24 min-h-screen">
 
       <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 pt-16 pb-0 flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16">
 
@@ -81,7 +81,7 @@ export function Hero() {
           <div className="relative rounded-t-2xl overflow-hidden border border-gray-200 dark:border-white/[0.07] shadow-[0_20px_80px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
 
             {/* iOS-style app header */}
-            <div className="bg-gray-50 dark:bg-[#0c0d14] border-b border-gray-100 dark:border-white/[0.05] px-5 py-3 flex items-center gap-2.5">
+            <div className="bg-gray-50 dark:bg-[#0c0d14] border-b border-gray-100 dark:border-white/[0.05] px-5 py-3 flex items-center">
               <Image
                 src="/lyqdex-icon.png"
                 alt="LyqDex"
@@ -89,15 +89,6 @@ export function Hero() {
                 height={20}
                 className="invert dark:invert-0 flex-shrink-0"
               />
-              <div className="ml-auto flex items-center gap-3">
-                <div className="flex gap-[3px]">
-                  <div className="w-[3px] h-2.5 rounded-full bg-black/15 dark:bg-white/15" />
-                  <div className="w-[3px] h-3.5 rounded-full bg-black/25 dark:bg-white/25" />
-                  <div className="w-[3px] h-[18px] rounded-full bg-black/35 dark:bg-white/35" />
-                  <div className="w-[3px] h-[22px] rounded-full bg-black/50 dark:bg-white/50" />
-                </div>
-                <div className="text-[10px] text-black/30 dark:text-white/30 font-medium tabular-nums">9:41</div>
-              </div>
             </div>
 
             <Image
