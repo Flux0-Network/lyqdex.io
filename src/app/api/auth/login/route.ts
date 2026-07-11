@@ -1,30 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
-import { hashSeedPhrase } from "@/lib/wallet";
 
 export async function POST(req: NextRequest) {
-  const { seedPhrase } = await req.json();
+  const { identifier, password } = await req.json();
 
-  if (!seedPhrase) {
+  if (!identifier || !password) {
     return NextResponse.json(
-      { error: "Seed Phrase ist erforderlich." },
+      { error: "Alle Felder sind erforderlich." },
       { status: 400 }
     );
   }
 
-  const seedHash = hashSeedPhrase(seedPhrase.trim().toLowerCase());
+  const isEmail = identifier.includes("@");
+  const column = isEmail ? "email" : "phone";
 
   const { data: users } = await supabase
     .from("users")
-    .select("id, wallet_address")
-    .eq("seed_hash", seedHash);
+    .select("id, wallet_address, password_hash")
+    .eq(column, identifier);
 
   const user = users?.[0];
 
-  if (!user) {
+  if (!user || !user.password_hash) {
     return NextResponse.json(
-      { error: "Ungültige Seed Phrase." },
+      { error: "Ungültige Anmeldedaten." },
+      { status: 401 }
+    );
+  }
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid) {
+    return NextResponse.json(
+      { error: "Ungültige Anmeldedaten." },
       { status: 401 }
     );
   }
