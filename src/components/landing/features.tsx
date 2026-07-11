@@ -57,7 +57,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-32 px-4 bg-[#080910]">
+    <section className="py-32 px-4 bg-gray-50 dark:bg-[#080910]">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -66,12 +66,12 @@ export function Features() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-xs text-gray-500 mb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.03] text-xs text-gray-500 mb-5">
             Warum LyqDex
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-white">
             Alles was du brauchst.
-            <span className="block mt-1 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+            <span className="block mt-1 bg-gradient-to-r from-cyan-500 to-emerald-400 bg-clip-text text-transparent">
               Nichts was du nicht brauchst.
             </span>
           </h2>
@@ -88,13 +88,13 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
-              className="group relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.04] transition overflow-hidden"
+              className="group relative p-6 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-black/[0.12] dark:hover:border-white/[0.1] hover:shadow-sm dark:hover:bg-white/[0.04] transition overflow-hidden"
             >
               {/* Accent glow */}
               <div className={`absolute top-0 left-0 w-32 h-32 bg-gradient-to-br ${feature.accent} rounded-br-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
 
               <feature.icon className={`relative h-5 w-5 ${feature.iconColor} mb-4`} />
-              <h3 className="relative font-semibold text-white mb-1.5">{feature.title}</h3>
+              <h3 className="relative font-semibold text-black dark:text-white mb-1.5">{feature.title}</h3>
               <p className="relative text-sm text-gray-500 leading-relaxed">
                 {feature.description}
               </p>

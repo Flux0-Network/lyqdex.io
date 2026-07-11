@@ -12,7 +12,6 @@ const STATS = [
   { label: "Märkte",        value: "500+"    },
 ];
 
-// Pre-generated realistic-looking BTC candles for the hero preview
 const CANDLES = [
   [0,   68,  80,  40,  55],
   [55,  90, 100,  50,  85],
@@ -60,11 +59,9 @@ function HeroChart() {
   function py(v: number) { return pad.t + (H - pad.t - pad.b) * (1 - (v - lo) / range); }
   function cx(i: number) { return pad.l + i * cw + cw / 2; }
 
-  // Simple MA5
   const ma5 = CANDLES.map((_, i) => {
     if (i < 4) return null;
-    const avg = CANDLES.slice(i - 4, i + 1).reduce((s, c) => s + c[4], 0) / 5;
-    return avg;
+    return CANDLES.slice(i - 4, i + 1).reduce((s, c) => s + c[4], 0) / 5;
   });
   const ma5Path = ma5.reduce((p, v, i) => {
     if (v == null) return p;
@@ -73,8 +70,7 @@ function HeroChart() {
 
   const ma20 = CANDLES.map((_, i) => {
     if (i < 19) return null;
-    const avg = CANDLES.slice(i - 19, i + 1).reduce((s, c) => s + c[4], 0) / 20;
-    return avg;
+    return CANDLES.slice(i - 19, i + 1).reduce((s, c) => s + c[4], 0) / 20;
   });
   const ma20Path = ma20.reduce((p, v, i) => {
     if (v == null) return p;
@@ -87,7 +83,6 @@ function HeroChart() {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
-      {/* Grid */}
       {[0.25, 0.5, 0.75].map((t) => (
         <line key={t} x1={pad.l} y1={pad.t + (H - pad.t - pad.b) * t}
           x2={W - pad.r} y2={pad.t + (H - pad.t - pad.b) * t}
@@ -96,18 +91,16 @@ function HeroChart() {
       <line x1={W - pad.r} y1={pad.t} x2={W - pad.r} y2={H - pad.b}
         stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
 
-      {/* MA lines */}
       <path d={ma20Path} fill="none" stroke="#3b82f6" strokeWidth="1.2" opacity="0.8" />
       <path d={ma5Path}  fill="none" stroke="#f59e0b" strokeWidth="1.2" opacity="0.9" />
 
-      {/* Candles */}
       {CANDLES.map(([, o, h, l, c], i) => {
-        const up   = c >= o;
-        const col  = up ? "#26a69a" : "#ef5350";
-        const top  = py(Math.max(o, c));
-        const bot  = py(Math.min(o, c));
-        const bh   = Math.max(1, bot - top);
-        const x    = cx(i);
+        const up  = c >= o;
+        const col = up ? "#26a69a" : "#ef5350";
+        const top = py(Math.max(o, c));
+        const bot = py(Math.min(o, c));
+        const bh  = Math.max(1, bot - top);
+        const x   = cx(i);
         return (
           <g key={i}>
             <line x1={x} y1={py(h)} x2={x} y2={py(l)} stroke={col} strokeWidth="1" />
@@ -116,7 +109,6 @@ function HeroChart() {
         );
       })}
 
-      {/* Current price line */}
       <line x1={pad.l} y1={lastY} x2={W - pad.r} y2={lastY}
         stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3 3" />
       <rect x={W - pad.r} y={lastY - 9} width={pad.r - 2} height={18}
@@ -127,11 +119,10 @@ function HeroChart() {
         64,256
       </text>
 
-      {/* Time labels */}
       {[6, 14, 22, 29].map((i) => (
         <text key={i} x={cx(i)} y={H - 6} fill="rgba(255,255,255,0.25)"
           fontSize="7" fontFamily="monospace" textAnchor="middle">
-          {["07/11", "07/12", "07/12", "07/13"][Math.floor(i / 7)]} 00:00
+          {["07/11", "07/12", "07/12", "07/13"][Math.floor(i / 7)]}
         </text>
       ))}
     </svg>
@@ -165,137 +156,149 @@ function LivePrice() {
 
 export function Hero() {
   return (
-    <section className="min-h-screen bg-[#080910] overflow-hidden relative flex flex-col">
+    <section className="min-h-screen bg-white dark:bg-[#080910] overflow-hidden relative flex items-center">
 
-      {/* Dot grid background */}
-      <div className="absolute inset-0 opacity-[0.3]"
+      {/* Dot grid — dark only */}
+      <div className="absolute inset-0 opacity-[0.3] hidden dark:block"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }} />
 
+      {/* Light mode subtle grid */}
+      <div className="absolute inset-0 opacity-[0.4] dark:hidden"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }} />
+
       {/* Glow orbs */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-cyan-500/8 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-purple-500/6 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[400px] bg-cyan-500/6 dark:bg-cyan-500/8 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-purple-500/5 dark:bg-purple-500/6 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-6 pt-36 pb-20 flex-1">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 pt-28 pb-16">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-xs text-gray-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Beta · Jetzt kostenlos starten
-          </div>
-        </motion.div>
-
-        {/* Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
-          className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.05] max-w-3xl"
-        >
-          <span className="text-white">Charts. Trades.</span>
-          <br />
-          <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-            Eine Plattform.
-          </span>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="mt-6 text-base text-gray-400 max-w-lg leading-relaxed"
-        >
-          Professionelle Charts wie TradingView. Trading wie Binance.
-          Non-custodial, hybrid — du behältst deine Keys.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="mt-9 flex flex-col sm:flex-row gap-3"
-        >
-          <Link href="/register"
-            className="px-8 py-3 rounded-xl bg-white hover:bg-gray-100 text-black font-semibold text-sm transition">
-            Konto erstellen
-          </Link>
-          <Link href="/trade"
-            className="px-8 py-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 hover:text-white font-semibold text-sm transition">
-            Live Demo →
-          </Link>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-4"
-        >
-          {STATS.map(({ label, value }) => (
-            <div key={label} className="text-center">
-              <div className="text-lg font-bold text-white">{value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Terminal preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-16 w-full max-w-4xl"
-        >
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0d14] shadow-[0_40px_120px_rgba(0,0,0,0.7)] overflow-hidden">
-
-            {/* Terminal top bar */}
-            <div className="flex items-center gap-3 px-4 h-10 border-b border-white/[0.06] bg-[#0c0d14]">
-              <Image src="/lyqdex-icon.png" alt="LyqDex" width={18} height={18} />
-              <div className="flex items-center gap-1.5 text-xs text-white font-semibold">
-                BTC<span className="text-gray-500">/USDT</span>
+          {/* ── Left: text ── */}
+          <div>
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-7"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Beta · Jetzt kostenlos starten
               </div>
-              <div className="text-sm font-bold">
-                <LivePrice />
-              </div>
-              <span className="text-[10px] text-emerald-400 font-medium">+0.28%</span>
-              <div className="ml-auto flex gap-1">
-                {["1m","5m","15m","1H","4H","1D"].map(tf => (
-                  <span key={tf} className={`text-[10px] px-1.5 py-0.5 rounded ${tf === "1H" ? "bg-white/10 text-white" : "text-gray-600"}`}>
-                    {tf}
-                  </span>
-                ))}
-              </div>
-            </div>
+            </motion.div>
 
-            {/* Chart SVG */}
-            <div className="bg-[#0a0b10] px-2 pt-2 pb-1">
-              <HeroChart />
-            </div>
-
-            {/* Bottom bar */}
-            <div className="flex items-center gap-4 px-4 py-2 border-t border-white/[0.04] text-[10px] text-gray-600">
-              <span className="flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> WebSocket Live
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="text-5xl sm:text-6xl font-bold tracking-tight leading-[1.06]"
+            >
+              <span className="text-black dark:text-white">Charts. Trades.</span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-500 to-emerald-400 bg-clip-text text-transparent">
+                Eine Plattform.
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-0.5 bg-[#f59e0b] rounded" /> MA5
-                <span className="w-2 h-0.5 bg-[#3b82f6] rounded" /> MA20
-              </span>
-              <span className="ml-auto">Binance · Bybit · OKX</span>
-            </div>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="mt-6 text-base text-gray-500 dark:text-gray-400 max-w-md leading-relaxed"
+            >
+              Professionelle Charts wie TradingView. Trading wie Binance.
+              Non-custodial, hybrid — du behältst deine Keys.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mt-9 flex flex-col sm:flex-row gap-3"
+            >
+              <Link href="/register"
+                className="px-8 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black font-semibold text-sm transition text-center">
+                Konto erstellen
+              </Link>
+              <Link href="/trade"
+                className="px-8 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.07] dark:hover:bg-white/[0.08] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white font-semibold text-sm transition text-center">
+                Live Demo →
+              </Link>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-12 flex flex-wrap gap-x-8 gap-y-4"
+            >
+              {STATS.map(({ label, value }) => (
+                <div key={label}>
+                  <div className="text-lg font-bold text-black dark:text-white">{value}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{label}</div>
+                </div>
+              ))}
+            </motion.div>
           </div>
-        </motion.div>
+
+          {/* ── Right: terminal preview ── */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-[#0c0d14] shadow-[0_40px_120px_rgba(0,0,0,0.25)] dark:shadow-[0_40px_120px_rgba(0,0,0,0.7)] overflow-hidden">
+
+              {/* Terminal top bar */}
+              <div className="flex items-center gap-3 px-4 h-10 border-b border-white/[0.06] bg-[#0c0d14]">
+                <Image src="/lyqdex-icon.png" alt="LyqDex" width={18} height={18} />
+                <div className="flex items-center gap-1.5 text-xs text-white font-semibold">
+                  BTC<span className="text-gray-500">/USDT</span>
+                </div>
+                <div className="text-sm font-bold">
+                  <LivePrice />
+                </div>
+                <span className="text-[10px] text-emerald-400 font-medium">+0.28%</span>
+                <div className="ml-auto flex gap-1">
+                  {["1m","5m","15m","1H","4H","1D"].map(tf => (
+                    <span key={tf} className={`text-[10px] px-1.5 py-0.5 rounded ${tf === "1H" ? "bg-white/10 text-white" : "text-gray-600"}`}>
+                      {tf}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="bg-[#0a0b10] px-2 pt-2 pb-1">
+                <HeroChart />
+              </div>
+
+              {/* Bottom bar */}
+              <div className="flex items-center gap-4 px-4 py-2 border-t border-white/[0.04] text-[10px] text-gray-600">
+                <span className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> WebSocket Live
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-0.5 bg-[#f59e0b] rounded" /> MA5
+                  <span className="w-2 h-0.5 bg-[#3b82f6] rounded" /> MA20
+                </span>
+                <span className="ml-auto">Binance · Bybit · OKX</span>
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );

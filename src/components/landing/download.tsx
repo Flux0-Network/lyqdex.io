@@ -29,7 +29,7 @@ const steps = [
 
 export function Download() {
   return (
-    <section className="py-32 px-4 bg-[#080910] relative overflow-hidden">
+    <section className="py-32 px-4 bg-white dark:bg-[#080910] relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[600px] h-[300px] bg-cyan-500/5 rounded-full blur-[100px]" />
@@ -42,10 +42,10 @@ export function Download() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-xs text-gray-500 mb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.03] text-xs text-gray-500 mb-5">
             So einfach geht&apos;s
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-white mb-4">
             In 3 Schritten loslegen
           </h2>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
@@ -61,12 +61,12 @@ export function Download() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.12, duration: 0.5 }}
-              className={`p-6 rounded-2xl border ${step.border} bg-white/[0.02]`}
+              className={`p-6 rounded-2xl border ${step.border} bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none`}
             >
               <div className={`text-4xl font-bold ${step.color} opacity-30 mb-4 font-mono`}>
                 {step.num}
               </div>
-              <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+              <h3 className="font-semibold text-black dark:text-white mb-2">{step.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
             </motion.div>
           ))}
@@ -82,13 +82,13 @@ export function Download() {
         >
           <Link
             href="/register"
-            className="px-8 py-3 rounded-xl bg-white hover:bg-gray-100 text-black font-semibold text-sm transition"
+            className="px-8 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black font-semibold text-sm transition"
           >
             Jetzt kostenlos starten
           </Link>
           <Link
             href="/trade"
-            className="px-8 py-3 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 hover:text-white font-semibold text-sm transition"
+            className="px-8 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.07] dark:hover:bg-white/[0.08] text-gray-700 dark:text-gray-300 font-semibold text-sm transition"
           >
             Live Demo ansehen →
           </Link>
