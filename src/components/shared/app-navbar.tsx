@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -12,7 +11,8 @@ import {
 interface User { id: string; wallet_address: string }
 interface Ticker { price: string; change: string; high: string; low: string; volume: string }
 
-export function AppNavbar() {
+// sidebarWidth: pass 36 on pages that have a left sidebar so the nav starts beside it
+export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,7 +33,7 @@ export function AppNavbar() {
         .catch(() => {});
     }
     load();
-    const iv = setInterval(load, 10000);
+    const iv = setInterval(load, 5000);
     return () => clearInterval(iv);
   }, []);
 
@@ -48,13 +48,10 @@ export function AppNavbar() {
   const isUp = change >= 0;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-3 px-3">
-
-      {/* Logo */}
-      <Link href="/" className="shrink-0">
-        <Image src="/lyqdex-icon.png" alt="LyqDex" width={28} height={28} />
-      </Link>
-
+    <nav
+      className="fixed top-0 right-0 z-40 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-3 px-3"
+      style={{ left: sidebarWidth }}
+    >
       {/* Pair selector */}
       <button className="flex items-center gap-1.5 shrink-0 group">
         <IconStar className="h-3.5 w-3.5 text-gray-600 group-hover:text-yellow-400 transition" />
@@ -85,16 +82,16 @@ export function AppNavbar() {
           <div className="hidden lg:flex items-center gap-4 shrink-0">
             <div className="w-px h-5 bg-white/[0.07]" />
             {[
-              { label: "24h High", value: ticker.high },
-              { label: "24h Low",  value: ticker.low  },
-              { label: "24h Vol (BTC)", value: parseFloat(ticker.volume).toLocaleString("en-US", { maximumFractionDigits: 0 }) },
-            ].map(({ label, value }) => (
+              { label: "24h High",     value: ticker.high,   fmt: true  },
+              { label: "24h Low",      value: ticker.low,    fmt: true  },
+              { label: "24h Vol (BTC)",value: ticker.volume, fmt: false },
+            ].map(({ label, value, fmt }) => (
               <div key={label}>
                 <div className="text-[10px] text-gray-500 leading-tight">{label}</div>
                 <div className="text-[11px] text-white font-medium tabular-nums leading-tight">
-                  {label.startsWith("24h Vol")
-                    ? value
-                    : parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {fmt
+                    ? parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : parseFloat(value).toLocaleString("en-US", { maximumFractionDigits: 0 })}
                 </div>
               </div>
             ))}
