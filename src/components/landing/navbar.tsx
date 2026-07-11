@@ -72,7 +72,7 @@ export function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
-          <Image src="/icon_logo.png" alt="LyqDex" width={36} height={36} className="brightness-[2]" />
+          <Image src="/lyqdex-icon.png" alt="LyqDex" width={36} height={36} className="brightness-[2]" />
         </Link>
 
         {/* Center nav links */}

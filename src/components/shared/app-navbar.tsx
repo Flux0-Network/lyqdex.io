@@ -34,7 +34,7 @@ export function AppNavbar() {
       <div className="max-w-[1800px] mx-auto px-4 h-12 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-white tracking-tight">
-            <Image src="/icon_logo.png" alt="LyqDex" width={24} height={24} />
+            <Image src="/lyqdex-icon.png" alt="LyqDex" width={24} height={24} />
             <span className="text-sm">LyqDex</span>
           </Link>
           <div className="hidden md:flex items-center gap-4 text-xs text-gray-400">

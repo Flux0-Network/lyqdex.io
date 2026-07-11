@@ -103,7 +103,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm py-12">
         <Link href="/" className="flex items-center justify-center mb-10">
           <Image
-            src="/icon_logo.png"
+            src="/lyqdex-icon.png"
             alt="LyqDex"
             width={32}
             height={32}
