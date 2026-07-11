@@ -52,7 +52,7 @@ export function AppNavbar() {
 
       {/* Logo */}
       <Link href="/" className="shrink-0">
-        <Image src="/lyqdex-icon.png" alt="LyqDex" width={20} height={20} />
+        <Image src="/lyqdex-icon.png" alt="LyqDex" width={28} height={28} />
       </Link>
 
       {/* Pair selector */}
