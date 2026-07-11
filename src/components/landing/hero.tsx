@@ -13,26 +13,24 @@ const stats = [
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen bg-[#0a0b0e] flex flex-col items-center overflow-hidden pt-24">
+    <section className="relative min-h-screen bg-[#080910] flex flex-col items-center overflow-hidden pt-24">
 
-      {/* Background glows */}
+      {/* Background glows — violet only, no cyan */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-[-10%] left-[20%] w-[700px] h-[700px] rounded-full bg-violet-700/10 blur-[140px]" />
-        <div className="absolute top-[20%] right-[-5%] w-[500px] h-[500px] rounded-full bg-cyan-700/8 blur-[120px]" />
-        <div className="absolute bottom-[-20%] left-[40%] w-[600px] h-[400px] rounded-full bg-violet-900/15 blur-[100px]" />
-        {/* Subtle grid */}
+        <div className="absolute top-[-5%] left-[25%] w-[600px] h-[600px] rounded-full bg-violet-800/8 blur-[160px]" />
+        <div className="absolute bottom-[-10%] left-[35%] w-[500px] h-[400px] rounded-full bg-violet-900/10 blur-[120px]" />
         <div
-          className="absolute inset-0 opacity-[0.025]"
+          className="absolute inset-0 opacity-[0.018]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 pt-20 pb-10">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 pt-16 pb-10">
 
         {/* Badge */}
         <motion.div
@@ -41,7 +39,7 @@ export function Hero() {
           transition={{ duration: 0.5 }}
           className="flex justify-center mb-6"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-xs text-violet-300 font-medium">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-xs text-gray-400 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
             Beta — Jetzt kostenlos testen
           </div>
@@ -52,13 +50,11 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-center text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08] max-w-3xl mx-auto"
+          className="text-center text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-3xl mx-auto"
         >
-          Trade smarter.
+          <span className="text-white">Trade smarter.</span>
           <br />
-          <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">
-            Faster. Deeper.
-          </span>
+          <span className="text-gray-500">Faster. Deeper.</span>
         </motion.h1>
 
         {/* Sub */}
@@ -66,7 +62,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-6 text-center text-base sm:text-lg text-gray-400 max-w-xl mx-auto leading-relaxed"
+          className="mt-6 text-center text-base sm:text-lg text-gray-600 max-w-xl mx-auto leading-relaxed"
         >
           Professionelle Crypto-Trading-Plattform für Spot, Futures und Derivate.
           Gebaut für die nächste Generation Trader.
@@ -81,13 +77,13 @@ export function Hero() {
         >
           <Link
             href="/register"
-            className="px-7 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm transition shadow-lg shadow-violet-900/40"
+            className="px-7 py-3 rounded-xl bg-white hover:bg-gray-100 text-black font-semibold text-sm transition"
           >
             Jetzt kostenlos starten
           </Link>
           <Link
             href="/trade"
-            className="px-7 py-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-gray-300 hover:text-white font-semibold text-sm transition"
+            className="px-7 py-3 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-gray-500 hover:text-gray-300 font-semibold text-sm transition"
           >
             Live Demo ansehen →
           </Link>
@@ -103,7 +99,7 @@ export function Hero() {
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="text-xl font-bold text-white">{stat.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+              <div className="text-xs text-gray-600 mt-0.5">{stat.label}</div>
             </div>
           ))}
         </motion.div>
@@ -116,22 +112,33 @@ export function Hero() {
         transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-[1180px] mx-auto px-4 pb-0"
       >
-        {/* Glow behind image */}
-        <div className="absolute inset-x-10 top-8 h-32 bg-violet-700/20 blur-[60px] rounded-full pointer-events-none" />
+        {/* Subtle glow behind */}
+        <div className="absolute inset-x-20 top-6 h-24 bg-violet-900/15 blur-[60px] rounded-full pointer-events-none" />
 
-        {/* Image frame */}
-        <div className="relative rounded-t-2xl overflow-hidden border border-white/[0.08] shadow-[0_0_80px_rgba(109,40,217,0.15),0_40px_120px_rgba(0,0,0,0.8)]">
-          {/* Fake browser bar */}
-          <div className="bg-[#10121a] border-b border-white/[0.06] px-4 py-2.5 flex items-center gap-3">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500/60" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-              <div className="w-3 h-3 rounded-full bg-green-500/60" />
-            </div>
-            <div className="flex-1 mx-4 bg-white/[0.05] rounded-md px-3 py-1 text-xs text-gray-500">
-              app.lyqdex.io/trade
+        {/* App frame */}
+        <div className="relative rounded-t-2xl overflow-hidden border border-white/[0.07] shadow-[0_0_60px_rgba(80,20,180,0.08),0_40px_120px_rgba(0,0,0,0.9)]">
+
+          {/* iOS-style app header */}
+          <div className="bg-[#0c0d14] border-b border-white/[0.05] px-5 py-3 flex items-center gap-2.5">
+            <Image
+              src="/lyqdex-icon.png"
+              alt="LyqDex"
+              width={20}
+              height={20}
+              className="brightness-[2] flex-shrink-0"
+            />
+            <span className="text-xs font-bold text-white tracking-[0.18em]">LYQDEX</span>
+            <div className="ml-auto flex items-center gap-3">
+              <div className="flex gap-[3px]">
+                <div className="w-[3px] h-2.5 rounded-full bg-white/20" />
+                <div className="w-[3px] h-3.5 rounded-full bg-white/30" />
+                <div className="w-[3px] h-[18px] rounded-full bg-white/40" />
+                <div className="w-[3px] h-[22px] rounded-full bg-white/50" />
+              </div>
+              <div className="text-[10px] text-white/30 font-medium tabular-nums">9:41</div>
             </div>
           </div>
+
           <Image
             src="/hero-dashboard.png"
             alt="LYQDEX Trading Platform"
@@ -140,8 +147,9 @@ export function Hero() {
             className="w-full h-auto block"
             priority
           />
-          {/* Fade to dark at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0b0e] to-transparent pointer-events-none" />
+
+          {/* Fade to dark */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#080910] to-transparent pointer-events-none" />
         </div>
       </motion.div>
 
