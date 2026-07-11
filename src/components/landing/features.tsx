@@ -45,7 +45,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-32 px-4 bg-gray-50">
+    <section className="py-32 px-4 bg-gray-50 dark:bg-[#05060b]">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -54,7 +54,7 @@ export function Features() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-black">
+          <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-white">
             Alles was du brauchst
           </h2>
           <p className="mt-3 text-gray-400 text-sm">
@@ -70,10 +70,10 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
-              className="group p-6 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm transition"
+              className="group p-6 rounded-2xl border border-gray-100 dark:border-white/[0.05] bg-white dark:bg-white/[0.02] hover:border-gray-200 dark:hover:border-white/10 hover:shadow-sm transition"
             >
-              <feature.icon className="h-5 w-5 text-black mb-4" />
-              <h3 className="font-semibold text-black mb-1">{feature.title}</h3>
+              <feature.icon className="h-5 w-5 text-black dark:text-gray-300 mb-4" />
+              <h3 className="font-semibold text-black dark:text-white mb-1">{feature.title}</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {feature.description}
               </p>

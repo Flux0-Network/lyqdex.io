@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @keyframes spotlight {
   0% {
     opacity: 0;
@@ -20,6 +22,11 @@
 }
 
 body {
-  background: #0a0b0e;
+  background: white;
+  color: black;
+}
+
+.dark body {
+  background: #080910;
   color: #e0e0e0;
 }

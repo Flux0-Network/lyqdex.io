@@ -4,29 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-const stats = [
-  { value: "$4.2B+", label: "24h Volumen" },
-  { value: "500+", label: "Trading Paare" },
-  { value: "<5ms", label: "Order Latenz" },
-  { value: "2M+", label: "Aktive Trader" },
-];
-
 export function Hero() {
   return (
-    <section className="relative bg-white flex flex-col items-center overflow-hidden pt-24">
+    <section className="relative bg-white dark:bg-[#080910] flex flex-col items-center overflow-hidden pt-24">
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 pt-16 pb-10">
+      {/* Content — left aligned */}
+      <div className="relative z-10 w-full max-w-[1180px] mx-auto px-6 pt-16 pb-10">
 
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-center mb-6"
+          className="mb-6"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-xs text-gray-500 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] text-xs text-gray-500 dark:text-gray-400 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white/60 animate-pulse" />
             Beta — Jetzt kostenlos testen
           </div>
         </motion.div>
@@ -36,11 +29,11 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-center text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-3xl mx-auto"
+          className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.08] max-w-2xl"
         >
-          <span className="text-black">Trade smarter.</span>
+          <span className="text-black dark:text-white">Trade smarter.</span>
           <br />
-          <span className="text-gray-300">Faster. Deeper.</span>
+          <span className="text-gray-300 dark:text-gray-600">Faster. Deeper.</span>
         </motion.h1>
 
         {/* Sub */}
@@ -48,7 +41,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-6 text-center text-base sm:text-lg text-gray-400 max-w-xl mx-auto leading-relaxed"
+          className="mt-6 text-base sm:text-lg text-gray-400 max-w-lg leading-relaxed"
         >
           Professionelle Crypto-Trading-Plattform für Spot, Futures und Derivate.
           Gebaut für die nächste Generation Trader.
@@ -59,35 +52,20 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-8 flex flex-col sm:flex-row gap-3 justify-center"
+          className="mt-8 flex flex-col sm:flex-row gap-3"
         >
           <Link
             href="/register"
-            className="px-7 py-3 rounded-xl bg-black hover:bg-gray-800 text-white font-semibold text-sm transition"
+            className="px-7 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black font-semibold text-sm transition"
           >
             Jetzt kostenlos starten
           </Link>
           <Link
             href="/trade"
-            className="px-7 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-black font-semibold text-sm transition"
+            className="px-7 py-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-gray-300 font-semibold text-sm transition"
           >
             Live Demo ansehen →
           </Link>
-        </motion.div>
-
-        {/* Stats row */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-4"
-        >
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-xl font-bold text-black">{stat.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{stat.label}</div>
-            </div>
-          ))}
         </motion.div>
       </div>
 
@@ -99,26 +77,25 @@ export function Hero() {
         className="relative z-10 w-full max-w-[1180px] mx-auto px-4 pb-0"
       >
         {/* App frame */}
-        <div className="relative rounded-t-2xl overflow-hidden border border-gray-200 shadow-[0_20px_80px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)]">
+        <div className="relative rounded-t-2xl overflow-hidden border border-gray-200 dark:border-white/[0.07] shadow-[0_20px_80px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
 
-          {/* iOS-style app header */}
-          <div className="bg-gray-50 border-b border-gray-100 px-5 py-3 flex items-center gap-2.5">
+          {/* iOS-style app header — icon only */}
+          <div className="bg-gray-50 dark:bg-[#0c0d14] border-b border-gray-100 dark:border-white/[0.05] px-5 py-3 flex items-center gap-2.5">
             <Image
               src="/lyqdex-icon.png"
               alt="LyqDex"
               width={20}
               height={20}
-              className="invert flex-shrink-0"
+              className="invert dark:invert-0 flex-shrink-0"
             />
-            <span className="text-xs font-bold text-black tracking-[0.18em]">LYQDEX</span>
             <div className="ml-auto flex items-center gap-3">
               <div className="flex gap-[3px]">
-                <div className="w-[3px] h-2.5 rounded-full bg-black/15" />
-                <div className="w-[3px] h-3.5 rounded-full bg-black/25" />
-                <div className="w-[3px] h-[18px] rounded-full bg-black/35" />
-                <div className="w-[3px] h-[22px] rounded-full bg-black/50" />
+                <div className="w-[3px] h-2.5 rounded-full bg-black/15 dark:bg-white/15" />
+                <div className="w-[3px] h-3.5 rounded-full bg-black/25 dark:bg-white/25" />
+                <div className="w-[3px] h-[18px] rounded-full bg-black/35 dark:bg-white/35" />
+                <div className="w-[3px] h-[22px] rounded-full bg-black/50 dark:bg-white/50" />
               </div>
-              <div className="text-[10px] text-black/30 font-medium tabular-nums">9:41</div>
+              <div className="text-[10px] text-black/30 dark:text-white/30 font-medium tabular-nums">9:41</div>
             </div>
           </div>
 
@@ -130,9 +107,6 @@ export function Hero() {
             className="w-full h-auto block"
             priority
           />
-
-          {/* Fade to white */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
       </motion.div>
 
