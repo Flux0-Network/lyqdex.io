@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 
-const BINANCE = "https://api.binance.com/api/v3";
+const COINGECKO = "https://api.coingecko.com/api/v3";
+
+const SYMBOL_TO_ID: Record<string, string> = {
+  BTCUSDT: "bitcoin",
+  ETHUSDT: "ethereum",
+  SOLUSDT: "solana",
+  BNBUSDT: "binancecoin",
+};
+
+const INTERVAL_TO_DAYS: Record<string, number> = {
+  "1m": 1, "5m": 1, "15m": 1, "1h": 7, "4h": 14, "1d": 90,
+};
 
 function generateCandles(price: number, count: number) {
   const now = Math.floor(Date.now() / 1000);
@@ -42,53 +53,61 @@ export async function GET(request: Request) {
   const symbol = (searchParams.get("symbol") || "BTCUSDT").toUpperCase();
   const interval = searchParams.get("interval") || "1h";
 
+  const coinId = SYMBOL_TO_ID[symbol] ?? "bitcoin";
+  const days = INTERVAL_TO_DAYS[interval] ?? 7;
+
   try {
-    const [tickerRes, klinesRes, depthRes, tradesRes] = await Promise.all([
-      fetch(`${BINANCE}/ticker/24hr?symbol=${symbol}`, { next: { revalidate: 10 } }),
-      fetch(`${BINANCE}/klines?symbol=${symbol}&interval=${interval}&limit=200`, { next: { revalidate: 10 } }),
-      fetch(`${BINANCE}/depth?symbol=${symbol}&limit=20`, { next: { revalidate: 5 } }),
-      fetch(`${BINANCE}/trades?symbol=${symbol}&limit=30`, { next: { revalidate: 5 } }),
+    const [priceRes, ohlcRes] = await Promise.all([
+      fetch(
+        `${COINGECKO}/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_high_24h=true&include_low_24h=true&include_24hr_vol=true`,
+        { next: { revalidate: 10 } }
+      ),
+      fetch(
+        `${COINGECKO}/coins/${coinId}/ohlc?vs_currency=usd&days=${days}`,
+        { next: { revalidate: 60 } }
+      ),
     ]);
 
-    if (!tickerRes.ok || !klinesRes.ok || !depthRes.ok || !tradesRes.ok) throw new Error("API error");
+    if (!priceRes.ok || !ohlcRes.ok) throw new Error("CoinGecko API error");
 
-    const [tickerData, klinesData, depthData, tradesData] = await Promise.all([
-      tickerRes.json(), klinesRes.json(), depthRes.json(), tradesRes.json(),
+    const [priceData, ohlcData] = await Promise.all([
+      priceRes.json(),
+      ohlcRes.json(),
     ]);
 
-    const candles = (klinesData as string[][]).map((k) => ({
-      time: Math.floor(Number(k[0]) / 1000),
-      open: parseFloat(k[1]),
-      high: parseFloat(k[2]),
-      low: parseFloat(k[3]),
-      close: parseFloat(k[4]),
-      volume: parseFloat(k[5]),
+    const coin = priceData[coinId];
+    if (!coin) throw new Error("No coin data");
+
+    const price: number = coin.usd;
+    const change: number = coin.usd_24h_change ?? 0;
+    const high24: number = coin.usd_24h_high ?? price * 1.01;
+    const low24: number = coin.usd_24h_low ?? price * 0.99;
+    const vol24: number = coin.usd_24h_vol ?? 0;
+
+    const candles = (ohlcData as number[][]).map(([ts, open, high, low, close]) => ({
+      time: Math.floor(ts / 1000),
+      open,
+      high,
+      low,
+      close,
+      volume: 0,
     }));
 
-    const orderbook = {
-      asks: (depthData.asks as string[][]).map(([price, amount]) => ({ price, amount })),
-      bids: (depthData.bids as string[][]).map(([price, amount]) => ({ price, amount })),
-    };
-
-    const trades = (tradesData as { price: string; qty: string; time: number; isBuyerMaker: boolean }[]).map((t) => ({
-      price: t.price,
-      amount: t.qty,
-      side: t.isBuyerMaker ? "sell" : "buy",
-      time: t.time,
-    }));
+    const orderbook = generateOrderbook(price);
+    const trades = generateTrades(price);
 
     return NextResponse.json({
       ticker: {
-        price: tickerData.lastPrice,
-        change: parseFloat(tickerData.priceChangePercent).toFixed(2),
-        high: tickerData.highPrice,
-        low: tickerData.lowPrice,
-        volume: parseFloat(tickerData.volume).toFixed(0),
+        price: price.toFixed(2),
+        change: change.toFixed(2),
+        high: high24.toFixed(2),
+        low: low24.toFixed(2),
+        volume: Math.round(vol24 / price).toString(),
       },
       candles,
       trades,
       orderbook,
-      source: "binance",
+      source: "coingecko",
     });
   } catch {
     const price = 64000 + Math.random() * 4000;
