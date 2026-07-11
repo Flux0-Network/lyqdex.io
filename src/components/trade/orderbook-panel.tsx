@@ -1,16 +1,54 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconArrowUp } from "@tabler/icons-react";
 
 interface OrderEntry {
   price: string;
   amount: string;
 }
 
+function BookRow({
+  entry,
+  maxTotal,
+  side,
+}: {
+  entry: OrderEntry;
+  maxTotal: number;
+  side: "ask" | "bid";
+}) {
+  const price = parseFloat(entry.price);
+  const amount = parseFloat(entry.amount);
+  const total = price * amount;
+  const pct = Math.min((total / maxTotal) * 100, 100);
+  const isBid = side === "bid";
+
+  return (
+    <div className="relative grid px-2 py-[3px] hover:bg-white/[0.02] cursor-pointer group"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+      {/* depth bar from right */}
+      <div
+        className={`absolute right-0 top-0 bottom-0 ${isBid ? "bg-emerald-500/[0.12]" : "bg-red-500/[0.12]"}`}
+        style={{ width: `${pct}%` }}
+      />
+      <div className={`relative tabular-nums font-medium text-[11px] ${isBid ? "text-emerald-400" : "text-red-400"}`}>
+        {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </div>
+      <div className="relative text-right text-gray-400 text-[11px] tabular-nums">
+        {amount.toFixed(4)}
+      </div>
+      <div className="relative text-right text-gray-500 text-[11px] tabular-nums">
+        {total.toFixed(2)}
+      </div>
+    </div>
+  );
+}
+
 export function OrderbookPanel() {
   const [asks, setAsks] = useState<OrderEntry[]>([]);
   const [bids, setBids] = useState<OrderEntry[]>([]);
   const [midPrice, setMidPrice] = useState("0");
+  const [change, setChange] = useState("0");
 
   useEffect(() => {
     function load() {
@@ -21,7 +59,10 @@ export function OrderbookPanel() {
             setAsks(d.orderbook.asks.slice(0, 12).reverse());
             setBids(d.orderbook.bids.slice(0, 12));
           }
-          if (d.ticker) setMidPrice(d.ticker.price);
+          if (d.ticker) {
+            setMidPrice(d.ticker.price);
+            setChange(d.ticker.change);
+          }
         })
         .catch(() => {});
     }
@@ -36,44 +77,42 @@ export function OrderbookPanel() {
     1
   );
 
+  const isUp = parseFloat(change) >= 0;
+
   return (
     <div className="h-full flex flex-col text-[11px]">
-      <div className="grid grid-cols-3 gap-2 px-3 py-1 text-gray-500 border-b border-white/5">
-        <div>Preis</div>
-        <div className="text-right">Menge</div>
+      {/* header */}
+      <div className="grid px-2 py-1 text-gray-500 border-b border-white/[0.06]"
+        style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+        <div>Preis (USDT)</div>
+        <div className="text-right">Menge (BTC)</div>
         <div className="text-right">Gesamt</div>
       </div>
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="flex flex-col justify-end">
-          {asks.map((o, i) => {
-            const total = parseFloat(o.price) * parseFloat(o.amount);
-            return (
-              <div key={`a${i}`} className="relative grid grid-cols-3 gap-2 px-3 py-0.5">
-                <div className="absolute right-0 top-0 bottom-0 bg-red-500/10" style={{ width: `${(total / maxTotal) * 100}%` }} />
-                <div className="relative text-red-400">{parseFloat(o.price).toLocaleString("de-DE", { minimumFractionDigits: 2 })}</div>
-                <div className="relative text-right text-gray-400">{parseFloat(o.amount).toFixed(4)}</div>
-                <div className="relative text-right text-gray-400">{total.toFixed(2)}</div>
-              </div>
-            );
-          })}
+
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+        {/* asks (red) — bottom-aligned */}
+        <div className="flex-1 flex flex-col justify-end">
+          {asks.map((o, i) => (
+            <BookRow key={`a${i}`} entry={o} maxTotal={maxTotal} side="ask" />
+          ))}
         </div>
-        <div className="px-3 py-1.5 text-center border-y border-white/5">
-          <span className="text-emerald-400 font-semibold text-sm">
-            {parseFloat(midPrice).toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+
+        {/* mid price */}
+        <div className="flex items-center gap-2 px-2 py-1.5 border-y border-white/[0.06] bg-white/[0.01] shrink-0">
+          <span className={`font-bold text-sm tabular-nums ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+            {parseFloat(midPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <IconArrowUp className={`h-3 w-3 transition-transform ${isUp ? "text-emerald-400" : "text-red-400 rotate-180"}`} />
+          <span className={`text-[10px] tabular-nums ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+            {isUp ? "+" : ""}{parseFloat(change).toFixed(2)}%
           </span>
         </div>
-        <div>
-          {bids.map((o, i) => {
-            const total = parseFloat(o.price) * parseFloat(o.amount);
-            return (
-              <div key={`b${i}`} className="relative grid grid-cols-3 gap-2 px-3 py-0.5">
-                <div className="absolute right-0 top-0 bottom-0 bg-emerald-500/10" style={{ width: `${(total / maxTotal) * 100}%` }} />
-                <div className="relative text-emerald-400">{parseFloat(o.price).toLocaleString("de-DE", { minimumFractionDigits: 2 })}</div>
-                <div className="relative text-right text-gray-400">{parseFloat(o.amount).toFixed(4)}</div>
-                <div className="relative text-right text-gray-400">{total.toFixed(2)}</div>
-              </div>
-            );
-          })}
+
+        {/* bids (green) */}
+        <div className="flex-1 flex flex-col">
+          {bids.map((o, i) => (
+            <BookRow key={`b${i}`} entry={o} maxTotal={maxTotal} side="bid" />
+          ))}
         </div>
       </div>
     </div>

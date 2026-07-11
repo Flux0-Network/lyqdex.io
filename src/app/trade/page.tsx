@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ResponsiveGridLayout, type Layout } from "react-grid-layout";
 import { AppNavbar } from "@/components/shared/app-navbar";
+import { TerminalHeader } from "@/components/trade/terminal-header";
 import { ChartPanel } from "@/components/trade/chart-panel";
 import { OrderbookPanel } from "@/components/trade/orderbook-panel";
 import { TradesPanel } from "@/components/trade/trades-panel";
@@ -82,6 +83,7 @@ export default function TradePage() {
       <div className="h-screen bg-[#0a0b0e] flex flex-col">
         <AppNavbar />
         <div className="mt-12 flex-1 flex flex-col">
+          <TerminalHeader />
           <div className="flex items-center justify-between px-3 py-1 bg-gray-900/50 border-b border-white/5">
             <span className="text-xs text-gray-400">{panelConfig[fullscreen].title}</span>
             <button onClick={() => setFullscreen(null)} className="text-gray-500 hover:text-white">
@@ -100,6 +102,7 @@ export default function TradePage() {
     <div className="h-screen bg-[#0a0b0e] flex flex-col overflow-hidden">
       <AppNavbar />
       <div className="mt-12 flex-1 min-h-0 flex flex-col" ref={containerRef}>
+        <TerminalHeader />
         <div className="flex items-center justify-end px-3 py-1 border-b border-white/5 bg-gray-950/50 shrink-0">
           <button onClick={handleReset} className="text-[10px] text-gray-500 hover:text-white transition">
             Layout zurücksetzen
