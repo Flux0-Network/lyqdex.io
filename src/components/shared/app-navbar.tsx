@@ -11,8 +11,17 @@ import {
 interface User { id: string; wallet_address: string }
 interface Ticker { price: string; change: string; high: string; low: string; volume: string }
 
-// sidebarWidth: pass 36 on pages that have a left sidebar so the nav starts beside it
-export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
+const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "1D"];
+
+export function AppNavbar({
+  sidebarWidth = 0,
+  timeframe,
+  onTimeframe,
+}: {
+  sidebarWidth?: number;
+  timeframe?: string;
+  onTimeframe?: (tf: string) => void;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,7 +58,7 @@ export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
 
   return (
     <nav
-      className="fixed top-0 right-0 z-40 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-3 px-3"
+      className="fixed top-0 right-0 z-40 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-2 px-3"
       style={{ left: sidebarWidth }}
     >
       {/* Pair selector */}
@@ -60,12 +69,12 @@ export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
         <IconChevronDown className="h-3 w-3 text-gray-600" />
       </button>
 
-      <div className="w-px h-6 bg-white/[0.07] shrink-0" />
+      <div className="w-px h-5 bg-white/[0.07] shrink-0" />
 
       {/* Live price */}
       {ticker && (
-        <div className="flex items-center gap-3 shrink-0">
-          <div>
+        <>
+          <div className="shrink-0">
             <div className={`text-base font-bold tabular-nums leading-tight ${isUp ? "text-emerald-400" : "text-red-400"}`}>
               {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
@@ -79,12 +88,12 @@ export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
             {isUp ? "+" : ""}{change.toFixed(2)}%
           </div>
 
-          <div className="hidden lg:flex items-center gap-4 shrink-0">
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             <div className="w-px h-5 bg-white/[0.07]" />
             {[
-              { label: "24h High",     value: ticker.high,   fmt: true  },
-              { label: "24h Low",      value: ticker.low,    fmt: true  },
-              { label: "24h Vol (BTC)",value: ticker.volume, fmt: false },
+              { label: "24h High",      value: ticker.high,   fmt: true  },
+              { label: "24h Low",       value: ticker.low,    fmt: true  },
+              { label: "24h Vol (BTC)", value: ticker.volume, fmt: false },
             ].map(({ label, value, fmt }) => (
               <div key={label}>
                 <div className="text-[10px] text-gray-500 leading-tight">{label}</div>
@@ -96,7 +105,29 @@ export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
               </div>
             ))}
           </div>
-        </div>
+        </>
+      )}
+
+      {/* Timeframe buttons — only shown when passed from trade page */}
+      {onTimeframe && (
+        <>
+          <div className="w-px h-5 bg-white/[0.07] shrink-0 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-0.5 shrink-0">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => onTimeframe(tf)}
+                className={`px-2 py-0.5 text-[11px] rounded transition ${
+                  timeframe === tf
+                    ? "text-white bg-white/10"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       <div className="flex-1" />
@@ -116,9 +147,6 @@ export function AppNavbar({ sidebarWidth = 0 }: { sidebarWidth?: number }) {
             <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
               <IconUser className="h-3.5 w-3.5 text-gray-300" />
             </div>
-            <span className="hidden sm:inline font-mono text-[10px] text-gray-500">
-              {user.wallet_address.slice(0, 6)}…{user.wallet_address.slice(-4)}
-            </span>
           </button>
           {menuOpen && (
             <>
