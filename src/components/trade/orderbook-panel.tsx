@@ -28,8 +28,13 @@ function BookRow({
       style={{ gridTemplateColumns: "1fr 1fr 1fr 14px" }}>
       {/* depth bar from right */}
       <div
-        className={`absolute right-0 top-0 bottom-0 ${isBid ? "bg-emerald-500/[0.12]" : "bg-red-500/[0.12]"}`}
+        className={`absolute right-0 top-0 bottom-0 ${isBid ? "bg-emerald-500/20" : "bg-red-500/20"}`}
         style={{ width: `${pct}%` }}
+      />
+      {/* right-edge accent line */}
+      <div
+        className={`absolute right-0 top-[1px] bottom-[1px] w-[2px] ${isBid ? "bg-emerald-500/40" : "bg-red-500/40"}`}
+        style={{ right: `${100 - pct}%` }}
       />
       <div className={`relative tabular-nums font-medium text-[11px] ${isBid ? "text-emerald-400" : "text-red-400"}`}>
         {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
