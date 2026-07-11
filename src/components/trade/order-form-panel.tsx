@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { IconCheck } from "@tabler/icons-react";
 
 export function OrderFormPanel() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<"limit" | "market">("limit");
   const [price, setPrice] = useState("");
   const [amount, setAmount] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     fetch("/api/market?symbol=BTCUSDT")
@@ -18,6 +20,26 @@ export function OrderFormPanel() {
   }, []);
 
   const total = price && amount ? (parseFloat(price) * parseFloat(amount)).toFixed(2) : "0.00";
+
+  function handleOrder() {
+    if (!amount || parseFloat(amount) <= 0) return;
+    const trade = {
+      side,
+      price: parseFloat(price || "0"),
+      amount: parseFloat(amount),
+      time: Date.now(),
+    };
+    // Save to localStorage
+    const existing = JSON.parse(localStorage.getItem("lyqdex_trades") || "[]");
+    existing.push(trade);
+    localStorage.setItem("lyqdex_trades", JSON.stringify(existing.slice(-100)));
+    // Notify chart
+    window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: trade }));
+    // Reset amount, show flash
+    setAmount("");
+    setConfirmed(true);
+    setTimeout(() => setConfirmed(false), 1500);
+  }
 
   return (
     <div className="h-full flex flex-col text-xs">
@@ -63,7 +85,7 @@ export function OrderFormPanel() {
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full mt-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-violet-500/50"
+              className="w-full mt-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-white/20"
             />
           </div>
         )}
@@ -75,7 +97,7 @@ export function OrderFormPanel() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full mt-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-violet-500/50"
+            className="w-full mt-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-white/20"
           />
         </div>
 
@@ -96,13 +118,20 @@ export function OrderFormPanel() {
         </div>
 
         <button
-          className={`w-full py-2.5 rounded-lg font-semibold transition ${
-            side === "buy"
+          onClick={handleOrder}
+          className={`w-full py-2.5 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
+            confirmed
+              ? "bg-white/10 text-white"
+              : side === "buy"
               ? "bg-emerald-500 hover:bg-emerald-600 text-black"
               : "bg-red-500 hover:bg-red-600 text-white"
           }`}
         >
-          BTC {side === "buy" ? "Kaufen" : "Verkaufen"}
+          {confirmed ? (
+            <><IconCheck className="h-4 w-4" /> Order platziert</>
+          ) : (
+            <>BTC {side === "buy" ? "Kaufen" : "Verkaufen"}</>
+          )}
         </button>
       </div>
     </div>

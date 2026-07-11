@@ -24,8 +24,8 @@ function BookRow({
   const isBid = side === "bid";
 
   return (
-    <div className="relative grid px-2 py-[3px] hover:bg-white/[0.02] cursor-pointer group"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+    <div className="relative grid px-2 py-[3px] hover:bg-white/[0.02] cursor-pointer"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 14px" }}>
       {/* depth bar from right */}
       <div
         className={`absolute right-0 top-0 bottom-0 ${isBid ? "bg-emerald-500/[0.12]" : "bg-red-500/[0.12]"}`}
@@ -39,6 +39,12 @@ function BookRow({
       </div>
       <div className="relative text-right text-gray-500 text-[11px] tabular-nums">
         {total.toFixed(2)}
+      </div>
+      {/* right-side buy/sell indicator */}
+      <div className="relative flex items-center justify-end">
+        <span className={`text-[9px] leading-none ${isBid ? "text-emerald-400" : "text-red-400"}`}>
+          {isBid ? "▲" : "▼"}
+        </span>
       </div>
     </div>
   );
@@ -83,10 +89,11 @@ export function OrderbookPanel() {
     <div className="h-full flex flex-col text-[11px]">
       {/* header */}
       <div className="grid px-2 py-1 text-gray-500 border-b border-white/[0.06]"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 14px" }}>
         <div>Preis (USDT)</div>
         <div className="text-right">Menge (BTC)</div>
         <div className="text-right">Gesamt</div>
+        <div />
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">

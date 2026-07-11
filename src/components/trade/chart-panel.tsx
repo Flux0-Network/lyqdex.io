@@ -22,6 +22,13 @@ interface MarketData {
   candles: Candle[];
 }
 
+interface UserTrade {
+  side: "buy" | "sell";
+  price: number;
+  amount: number;
+  time: number; // ms timestamp
+}
+
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "1D"];
 const MA_CONFIG = [
   { period: 5, color: "#f59e0b", label: "MA5" },
@@ -38,28 +45,23 @@ function calcMA(candles: Candle[], period: number) {
   });
 }
 
-function detectSignals(candles: Candle[]) {
-  const ma5 = new Map(calcMA(candles, 5).map((x) => [x.time, x.value]));
-  const ma10 = new Map(calcMA(candles, 10).map((x) => [x.time, x.value]));
+function buildTradeMarkers(candles: Candle[], trades: UserTrade[]) {
+  if (!candles.length || !trades.length) return [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const markers: any[] = [];
-  let prev5 = 0, prev10 = 0;
-
-  for (const c of candles) {
-    const t = c.time as unknown as import("lightweight-charts").Time;
-    const cur5 = ma5.get(t) ?? 0;
-    const cur10 = ma10.get(t) ?? 0;
-    if (prev5 && prev10) {
-      if (prev5 <= prev10 && cur5 > cur10) {
-        markers.push({ time: t, position: "belowBar", color: "#34d399", shape: "circle", text: "B", size: 0.6 });
-      } else if (prev5 >= prev10 && cur5 < cur10) {
-        markers.push({ time: t, position: "aboveBar", color: "#f87171", shape: "circle", text: "S", size: 0.6 });
-      }
-    }
-    prev5 = cur5;
-    prev10 = cur10;
-  }
-  return markers;
+  return trades.map((t): any => {
+    const tradeSec = Math.floor(t.time / 1000);
+    const nearest = candles.reduce((best, c) =>
+      Math.abs(c.time - tradeSec) < Math.abs(best.time - tradeSec) ? c : best
+    );
+    return {
+      time: nearest.time as unknown as import("lightweight-charts").Time,
+      position: t.side === "buy" ? "belowBar" : "aboveBar",
+      color: t.side === "buy" ? "#34d399" : "#f87171",
+      shape: "circle",
+      text: t.side === "buy" ? "B" : "S",
+      size: 1,
+    };
+  });
 }
 
 export function ChartPanel() {
@@ -67,6 +69,25 @@ export function ChartPanel() {
   const [data, setData] = useState<MarketData | null>(null);
   const [timeframe, setTimeframe] = useState("1H");
   const [hoverCandle, setHoverCandle] = useState<Candle | null>(null);
+  const [userTrades, setUserTrades] = useState<UserTrade[]>([]);
+
+  // Load persisted trades on mount
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("lyqdex_trades") || "[]");
+      setUserTrades(saved);
+    } catch {}
+  }, []);
+
+  // Listen for new trades from OrderFormPanel
+  useEffect(() => {
+    function onTrade(e: Event) {
+      const trade = (e as CustomEvent<UserTrade>).detail;
+      setUserTrades((prev) => [...prev, trade]);
+    }
+    window.addEventListener("lyqdex-trade", onTrade);
+    return () => window.removeEventListener("lyqdex-trade", onTrade);
+  }, []);
 
   useEffect(() => {
     function load() {
@@ -125,8 +146,8 @@ export function ChartPanel() {
       maSeries.setData(maData);
     }
 
-    // B/S markers
-    const signals = detectSignals(data.candles);
+    // B/S markers — only from user's actual trades
+    const signals = buildTradeMarkers(data.candles, userTrades);
     if (signals.length) createSeriesMarkers(candleSeries, signals);
 
     chart.timeScale().fitContent();
@@ -142,7 +163,8 @@ export function ChartPanel() {
     });
     observer.observe(containerRef.current);
     return () => { observer.disconnect(); chart.remove(); };
-  }, [data]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, userTrades]);
 
   const maValues = useMemo(() => {
     if (!data?.candles) return null;
