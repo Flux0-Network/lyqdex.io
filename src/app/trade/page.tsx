@@ -26,7 +26,7 @@ export default function TradePage() {
 
       {/* Full-height sidebar */}
       <div
-        className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] border-r border-white/[0.06] z-50 flex flex-col items-center justify-between py-2.5"
+        className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] z-50 flex flex-col items-center justify-between py-2.5"
         style={{ width: SIDEBAR_W }}
       >
         <Link href="/" className="flex items-center justify-center">
