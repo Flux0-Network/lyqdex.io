@@ -4,17 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconBell, IconUser, IconLogout } from "@tabler/icons-react";
+import {
+  IconBell, IconUser, IconLogout, IconStar,
+  IconChevronDown, IconArrowUpRight, IconArrowDownRight,
+} from "@tabler/icons-react";
 
-interface User {
-  id: string;
-  wallet_address: string;
-}
-
-interface Ticker {
-  price: string;
-  change: string;
-}
+interface User { id: string; wallet_address: string }
+interface Ticker { price: string; change: string; high: string; low: string; volume: string }
 
 export function AppNavbar() {
   const router = useRouter();
@@ -47,49 +43,81 @@ export function AppNavbar() {
     router.push("/");
   }
 
-  const isUp = parseFloat(ticker?.change ?? "0") >= 0;
+  const price = parseFloat(ticker?.price ?? "0");
+  const change = parseFloat(ticker?.change ?? "0");
+  const isUp = change >= 0;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-8 bg-[#0c0d14] border-b border-white/[0.06] flex items-center px-2 gap-2">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-3 px-3">
+
       {/* Logo */}
-      <Link href="/" className="flex items-center shrink-0 pr-1">
-        <Image src="/lyqdex-icon.png" alt="LyqDex" width={18} height={18} className="invert dark:invert-0" />
+      <Link href="/" className="shrink-0">
+        <Image src="/lyqdex-icon.png" alt="LyqDex" width={20} height={20} />
       </Link>
 
+      {/* Pair selector */}
+      <button className="flex items-center gap-1.5 shrink-0 group">
+        <IconStar className="h-3.5 w-3.5 text-gray-600 group-hover:text-yellow-400 transition" />
+        <span className="text-white font-semibold text-sm">BTC</span>
+        <span className="text-gray-500 text-sm">/USDT</span>
+        <IconChevronDown className="h-3 w-3 text-gray-600" />
+      </button>
+
+      <div className="w-px h-6 bg-white/[0.07] shrink-0" />
+
+      {/* Live price */}
+      {ticker && (
+        <div className="flex items-center gap-3 shrink-0">
+          <div>
+            <div className={`text-base font-bold tabular-nums leading-tight ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+              {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-[10px] text-gray-500 tabular-nums leading-tight">
+              ≈ ${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-0.5 text-xs font-medium tabular-nums shrink-0 ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+            {isUp ? <IconArrowUpRight className="h-3.5 w-3.5" /> : <IconArrowDownRight className="h-3.5 w-3.5" />}
+            {isUp ? "+" : ""}{change.toFixed(2)}%
+          </div>
+
+          <div className="hidden lg:flex items-center gap-4 shrink-0">
+            <div className="w-px h-5 bg-white/[0.07]" />
+            {[
+              { label: "24h High", value: ticker.high },
+              { label: "24h Low",  value: ticker.low  },
+              { label: "24h Vol (BTC)", value: parseFloat(ticker.volume).toLocaleString("en-US", { maximumFractionDigits: 0 }) },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <div className="text-[10px] text-gray-500 leading-tight">{label}</div>
+                <div className="text-[11px] text-white font-medium tabular-nums leading-tight">
+                  {label.startsWith("24h Vol")
+                    ? value
+                    : parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
       {/* Bell */}
-      <button className="p-1 text-gray-500 hover:text-white transition">
+      <button className="p-1.5 text-gray-500 hover:text-white transition">
         <IconBell className="h-3.5 w-3.5" />
       </button>
 
-      {/* BTC/USDT live chip */}
-      <Link
-        href="/trade"
-        className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.06] hover:bg-white/10 transition"
-      >
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-60" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400" />
-        </span>
-        <span className="text-[11px] font-medium text-white">BTC/USDT</span>
-        {ticker && (
-          <span className={`text-[10px] tabular-nums font-medium ${isUp ? "text-emerald-400" : "text-red-400"}`}>
-            {parseFloat(ticker.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        )}
-      </Link>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* User menu */}
+      {/* User */}
       {user ? (
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-white/5 transition"
+            className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-white/5 transition"
           >
-            <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center">
-              <IconUser className="h-3 w-3 text-gray-400" />
+            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
+              <IconUser className="h-3.5 w-3.5 text-gray-300" />
             </div>
             <span className="hidden sm:inline font-mono text-[10px] text-gray-500">
               {user.wallet_address.slice(0, 6)}…{user.wallet_address.slice(-4)}
@@ -115,10 +143,10 @@ export function AppNavbar() {
         </div>
       ) : (
         <div className="flex items-center gap-1.5">
-          <Link href="/login" className="text-[11px] text-gray-500 hover:text-white transition px-2 py-0.5 rounded hover:bg-white/5">
+          <Link href="/login" className="text-[11px] text-gray-500 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">
             Anmelden
           </Link>
-          <Link href="/register" className="text-[11px] bg-white text-black font-semibold px-2.5 py-0.5 rounded-md hover:bg-gray-200 transition">
+          <Link href="/register" className="text-[11px] bg-white text-black font-semibold px-2.5 py-1 rounded-lg hover:bg-gray-200 transition">
             Registrieren
           </Link>
         </div>
