@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import {
   IconChartCandleFilled,
   IconBolt,
@@ -13,92 +10,71 @@ import {
 const features = [
   {
     title: "Professionelle Charts",
-    description: "Eigene Candlestick-Charts mit MA, Volumen und Indikatoren — direkt im Browser, keine Plugins.",
+    description: "Eigene Candlestick-Charts mit MA, Indikatoren und Replay-Modus — direkt im Browser.",
     icon: IconChartCandleFilled,
-    accent: "from-cyan-500/20 to-cyan-500/0",
-    iconColor: "text-cyan-400",
+    color: "text-cyan-400",
   },
   {
-    title: "Unter 5ms Latenz",
-    description: "WebSocket-Feeds von Binance und Bybit parallel — Echtzeit-Tick-Daten, keine Verzögerung.",
+    title: "Unter 1ms Latenz",
+    description: "WebSocket-Feeds von Binance und Bybit parallel — Echtzeit-Tick-Daten ohne Verzögerung.",
     icon: IconBolt,
-    accent: "from-amber-500/20 to-amber-500/0",
-    iconColor: "text-amber-400",
+    color: "text-amber-400",
   },
   {
     title: "Non-Custodial",
-    description: "Du behältst immer deine Keys. Hybrid-Matching On-Chain — kein Vertrauen in eine Drittpartei nötig.",
+    description: "Du behältst deine Keys. Hybrid-Matching On-Chain — kein Vertrauen in Drittparteien nötig.",
     icon: IconShieldLock,
-    accent: "from-emerald-500/20 to-emerald-500/0",
-    iconColor: "text-emerald-400",
+    color: "text-emerald-400",
   },
   {
     title: "Aggregierte Preise",
     description: "Median aus Binance, Bybit, OKX und CoinGecko — manipulationsresistenter Referenzpreis.",
     icon: IconChartArrows,
-    accent: "from-blue-500/20 to-blue-500/0",
-    iconColor: "text-blue-400",
+    color: "text-blue-400",
   },
   {
     title: "Open Source",
-    description: "Vollständig verifizierbare Smart Contracts. Kein Blackbox-Backend — alles on-chain nachprüfbar.",
+    description: "Vollständig verifizierbare Smart Contracts — alles on-chain nachprüfbar, kein Blackbox-Backend.",
     icon: IconSourceCode,
-    accent: "from-purple-500/20 to-purple-500/0",
-    iconColor: "text-purple-400",
+    color: "text-purple-400",
   },
   {
     title: "Kostenlos in der Beta",
-    description: "Kein KYC. Kein Abo. Während der Beta-Phase kostenlos — direkt loslegen.",
+    description: "Kein KYC. Kein Abo. Während der Beta-Phase kostenlos und ohne Einschränkungen.",
     icon: IconCoin,
-    accent: "from-pink-500/20 to-pink-500/0",
-    iconColor: "text-pink-400",
+    color: "text-pink-400",
   },
 ];
 
 export function Features() {
   return (
-    <section className="py-32 px-4 bg-gray-50 dark:bg-[#080910]">
+    <section className="py-24 px-5 bg-gray-50 dark:bg-[#080910]">
       <div className="max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.03] text-xs text-gray-500 mb-5">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.03] text-xs text-gray-500 mb-4">
             Warum LyqDex
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-black dark:text-white">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black dark:text-white">
             Alles was du brauchst.
             <span className="block mt-1 bg-gradient-to-r from-cyan-500 to-emerald-400 bg-clip-text text-transparent">
               Nichts was du nicht brauchst.
             </span>
           </h2>
-          <p className="mt-4 text-gray-500 text-sm max-w-md mx-auto">
-            Professionelle Trading-Tools, vollständig dezentral und ohne Kompromisse.
+          <p className="mt-3 text-gray-500 text-sm max-w-sm mx-auto">
+            Professionelle Trading-Tools, dezentral und ohne Kompromisse.
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.5 }}
-              className="group relative p-6 rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-black/[0.12] dark:hover:border-white/[0.1] hover:shadow-sm dark:hover:bg-white/[0.04] transition overflow-hidden"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="p-5 rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-black/[0.1] dark:hover:border-white/[0.1] hover:shadow-sm transition"
             >
-              {/* Accent glow */}
-              <div className={`absolute top-0 left-0 w-32 h-32 bg-gradient-to-br ${feature.accent} rounded-br-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
-
-              <feature.icon className={`relative h-5 w-5 ${feature.iconColor} mb-4`} />
-              <h3 className="relative font-semibold text-black dark:text-white mb-1.5">{feature.title}</h3>
-              <p className="relative text-sm text-gray-500 leading-relaxed">
-                {feature.description}
-              </p>
-            </motion.div>
+              <f.icon className={`h-5 w-5 ${f.color} mb-3`} />
+              <h3 className="font-semibold text-black dark:text-white mb-1 text-sm">{f.title}</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
+            </div>
           ))}
         </div>
       </div>
