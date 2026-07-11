@@ -43,7 +43,8 @@ export function OrderFormPanel() {
 
   return (
     <div className="h-full flex flex-col text-xs">
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* Sticky top — always visible on mobile */}
+      <div className="shrink-0 px-3 pt-3 pb-2 space-y-2 bg-[#12131a] border-b border-white/[0.05]">
         <div className="grid grid-cols-2 gap-1 bg-gray-900 rounded-lg p-0.5">
           <button
             onClick={() => setSide("buy")}
@@ -77,7 +78,9 @@ export function OrderFormPanel() {
             Market
           </button>
         </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-3 space-y-3">
         {orderType === "limit" && (
           <div>
             <label className="text-gray-500 text-[11px]">Preis (USDT)</label>
@@ -137,3 +140,4 @@ export function OrderFormPanel() {
     </div>
   );
 }
+
