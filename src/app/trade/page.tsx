@@ -26,18 +26,25 @@ export default function TradePage() {
 
       {/* Full-height sidebar */}
       <div
-        className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] z-50 flex flex-col items-center justify-between py-2.5"
+        className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] z-50 flex flex-col items-center"
         style={{ width: SIDEBAR_W }}
       >
-        <Link href="/" className="flex items-center justify-center">
-          <Image src="/lyqdex-icon.png" alt="LyqDex" width={26} height={26} />
-        </Link>
-        <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
-          {walletAddr ? (
-            <span className="text-[9px] font-bold text-cyan-300">{walletAddr.slice(2, 4).toUpperCase()}</span>
-          ) : (
-            <IconUser className="h-3 w-3 text-gray-500" />
-          )}
+        {/* Top: logo — no border, same height as navbar */}
+        <div className="h-11 flex items-center justify-center shrink-0">
+          <Link href="/" className="flex items-center justify-center">
+            <Image src="/lyqdex-icon.png" alt="LyqDex" width={26} height={26} />
+          </Link>
+        </div>
+
+        {/* Bottom: border-r + profile avatar */}
+        <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center justify-end pb-2.5">
+          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
+            {walletAddr ? (
+              <span className="text-[9px] font-bold text-cyan-300">{walletAddr.slice(2, 4).toUpperCase()}</span>
+            ) : (
+              <IconUser className="h-3 w-3 text-gray-500" />
+            )}
+          </div>
         </div>
       </div>
 
