@@ -71,9 +71,8 @@ export function Navbar() {
       <div className="max-w-[1280px] mx-auto px-6 h-16 flex items-center gap-8">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <Image src="/icon_logo.png" alt="LyqDex" width={32} height={32} className="brightness-[2]" />
-          <span className="text-white font-bold text-lg tracking-tight">LYQDEX</span>
+        <Link href="/" className="flex items-center flex-shrink-0">
+          <Image src="/icon_logo.png" alt="LyqDex" width={36} height={36} className="brightness-[2]" />
         </Link>
 
         {/* Center nav links */}
