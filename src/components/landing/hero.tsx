@@ -13,7 +13,7 @@ const stats = [
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen bg-[#0a0b0e] flex flex-col items-center overflow-hidden pt-16">
+    <section className="relative min-h-screen bg-[#0a0b0e] flex flex-col items-center overflow-hidden pt-24">
 
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
