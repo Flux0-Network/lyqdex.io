@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 const BINANCE = "https://api.binance.com/api/v3";
 
-// ── Fallback generators (used when Binance is unreachable) ─────────────────
 function generateCandles(price: number, count: number) {
   const now = Math.floor(Date.now() / 1000);
   const candles = [];
@@ -38,25 +37,18 @@ function generateTrades(price: number) {
   }));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = (searchParams.get("symbol") || "BTCUSDT").toUpperCase();
   const interval = searchParams.get("interval") || "1h";
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-
     const [tickerRes, klinesRes, depthRes, tradesRes] = await Promise.all([
-      fetch(`${BINANCE}/ticker/24hr?symbol=${symbol}`, { signal: controller.signal, next: { revalidate: 10 } }),
-      fetch(`${BINANCE}/klines?symbol=${symbol}&interval=${interval}&limit=200`, { signal: controller.signal, next: { revalidate: 10 } }),
-      fetch(`${BINANCE}/depth?symbol=${symbol}&limit=20`, { signal: controller.signal, next: { revalidate: 5 } }),
-      fetch(`${BINANCE}/trades?symbol=${symbol}&limit=30`, { signal: controller.signal, next: { revalidate: 5 } }),
+      fetch(`${BINANCE}/ticker/24hr?symbol=${symbol}`, { next: { revalidate: 10 } }),
+      fetch(`${BINANCE}/klines?symbol=${symbol}&interval=${interval}&limit=200`, { next: { revalidate: 10 } }),
+      fetch(`${BINANCE}/depth?symbol=${symbol}&limit=20`, { next: { revalidate: 5 } }),
+      fetch(`${BINANCE}/trades?symbol=${symbol}&limit=30`, { next: { revalidate: 5 } }),
     ]);
-
-    clearTimeout(timeout);
 
     if (!tickerRes.ok || !klinesRes.ok || !depthRes.ok || !tradesRes.ok) throw new Error("API error");
 
@@ -98,7 +90,6 @@ export async function GET(request: Request) {
       source: "binance",
     });
   } catch {
-    // Fallback: realistic simulated data when Binance is unreachable
     const price = 64000 + Math.random() * 4000;
     const change = (Math.random() - 0.48) * 4;
     return NextResponse.json({
