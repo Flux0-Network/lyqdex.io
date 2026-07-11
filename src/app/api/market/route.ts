@@ -13,7 +13,7 @@ function generateCandles(price: number, count: number) {
     const high = Math.max(open, close) + Math.random() * v * 0.4;
     const low = Math.min(open, close) - Math.random() * v * 0.4;
     p = close;
-    candles.push({ time: now - i * 3600, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
+    candles.push({ time: now - i * 3600, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2), volume: +(Math.random() * 2000 + 200).toFixed(2) });
   }
   return candles;
 }
@@ -62,6 +62,7 @@ export async function GET(request: Request) {
       high: parseFloat(k[2]),
       low: parseFloat(k[3]),
       close: parseFloat(k[4]),
+      volume: parseFloat(k[5]),
     }));
 
     const orderbook = {
