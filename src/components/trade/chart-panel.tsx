@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { ChartCanvas, type Candle, type Drawing, type DrawingTool, type ChartType, type MagnetMode } from "./chart-canvas";
+import { ChartCanvas, type Candle, type Drawing, type DrawingTool, type ChartType, type MagnetMode, type OpenPosition } from "./chart-canvas";
 import { ChartToolbar } from "./chart-toolbar";
 import { ReplayBar } from "./replay-bar";
 import { useMarketWS } from "@/hooks/use-market-ws";
@@ -49,7 +49,8 @@ export function ChartPanel({
   const [candleColors, setCandleColors] = useState({ up: "#26a69a", down: "#ef5350" });
   const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
   const [chartBg,      setChartBg]      = useState("#0a0b10");
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings,   setShowSettings]   = useState(false);
+  const [openPositions,  setOpenPositions]  = useState<OpenPosition[]>([]);
   const settingsRef   = useRef<HTMLDivElement>(null);
   const canvasSaveRef = useRef<(() => void) | null>(null);
 
@@ -60,6 +61,20 @@ export function ChartPanel({
     if (!saveRef) return;
     saveRef.current = () => canvasSaveRef.current?.();
   }, [saveRef]);
+
+  // Sync open positions from localStorage → chart overlay
+  const reloadPositions = useCallback(() => {
+    try { setOpenPositions(JSON.parse(localStorage.getItem("lyqdex_positions") || "[]")); } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    reloadPositions();
+    window.addEventListener("lyqdex-trade",           reloadPositions);
+    window.addEventListener("lyqdex-position-closed", reloadPositions);
+    return () => {
+      window.removeEventListener("lyqdex-trade",           reloadPositions);
+      window.removeEventListener("lyqdex-position-closed", reloadPositions);
+    };
+  }, [reloadPositions]);
 
   useEffect(() => {
     onReplayChange?.(replay.active, replay.toggle);
@@ -244,6 +259,7 @@ export function ChartPanel({
                 saveRef={canvasSaveRef}
                 symbol={symbol}
                 chartBg={chartBg}
+                openPositions={openPositions}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-600 text-xs">

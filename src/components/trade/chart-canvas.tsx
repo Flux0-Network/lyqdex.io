@@ -64,6 +64,15 @@ function fmtPrice(p: number): string {
   return p.toFixed(6);
 }
 
+export interface OpenPosition {
+  id: string;
+  side: "buy" | "sell";
+  symbol: string;
+  price: number;
+  amount: number;
+  leverage: number;
+}
+
 export function ChartCanvas({
   candles, userTrades = [], onHover,
   chartType = "candle", visibleMAs = [true, true, true, true], showVolume = true,
@@ -72,6 +81,7 @@ export function ChartCanvas({
   activeTool = "cursor", drawings = [],
   onAddDrawing, onUpdateDrawing, onDeleteDrawing,
   saveRef, symbol = "BTCUSDT", chartBg = "#0a0b10",
+  openPositions = [],
 }: {
   candles:       Candle[];
   userTrades?:   UserTrade[];
@@ -89,6 +99,7 @@ export function ChartCanvas({
   saveRef?:      React.MutableRefObject<(() => void) | null>;
   symbol?:       string;
   chartBg?:      string;
+  openPositions?: OpenPosition[];
 }) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -442,6 +453,54 @@ export function ChartCanvas({
       if (preview) renderDrawing(preview,0.55);
     }
 
+    // ── Open positions (MEXC-style entry lines)
+    const curClose = candles.at(-1)?.close ?? 0;
+    for (const pos of openPositions) {
+      if (pos.symbol !== symbol) continue;
+      const y = pY(pos.price);
+      if (y < PAD.top - 1 || y > H - PAD.bottom + 1) continue;
+      const isLong = pos.side === "buy";
+      const col = isLong ? "#26a69a" : "#ef5350";
+      const pnlPct = curClose > 0
+        ? ((curClose - pos.price) / pos.price) * 100 * (isLong ? 1 : -1) * pos.leverage
+        : 0;
+
+      ctx.save();
+      // Dashed entry line
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(W - PAD.right, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Right-side pill label
+      const lx = W - PAD.right;
+      const lw = PAD.right - 2;
+      const lh = 26;
+      const ly = Math.max(PAD.top + 1, Math.min(y - lh / 2, H - PAD.bottom - lh - 1));
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = col;
+      ctx.fillRect(lx, ly, lw, lh);
+
+      ctx.globalAlpha = 1;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      // Side + leverage
+      ctx.font = "bold 9px ui-monospace,monospace";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${isLong ? "LONG" : "SHORT"} ${pos.leverage}x`, lx + lw / 2, ly + 8);
+      // PnL
+      ctx.font = "8px ui-monospace,monospace";
+      ctx.fillStyle = pnlPct >= 0 ? "#a7f3d0" : "#fecaca";
+      ctx.fillText(`${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(2)}%`, lx + lw / 2, ly + 18);
+
+      ctx.restore();
+    }
+
     // ── Crosshair
     if (crosshair) {
       ctx.setLineDash([3,3]);ctx.strokeStyle="rgba(255,255,255,0.18)";ctx.lineWidth=1;
@@ -462,7 +521,7 @@ export function ChartCanvas({
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candles, candleWidth, offset, yZoom, yOffset, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode, chartBg]);
+  }, [candles, candleWidth, offset, yZoom, yOffset, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode, chartBg, openPositions, symbol]);
 
   useEffect(() => { draw(); }, [draw]);
 
