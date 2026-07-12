@@ -85,7 +85,7 @@ export function Security() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.07, duration: 0.4 }}
-              className="rounded-2xl bg-white dark:bg-white/[0.03] p-5 shadow-sm dark:shadow-none hover:shadow-md dark:hover:bg-white/[0.06] transition"
+              className="relative p-5 rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-black/[0.1] dark:hover:border-white/[0.1] hover:shadow-sm transition"
             >
               <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl ${item.bg} mb-4`}>
                 <item.icon className={`h-4.5 w-4.5 ${item.color}`} strokeWidth={1.5} />
