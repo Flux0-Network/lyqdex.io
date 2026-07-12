@@ -80,12 +80,6 @@ export function Download() {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="mt-14 flex flex-col sm:flex-row gap-3 justify-center"
         >
-          <Link
-            href="/register"
-            className="px-8 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black font-semibold text-sm transition"
-          >
-            Jetzt kostenlos starten
-          </Link>
         </motion.div>
       </div>
     </section>

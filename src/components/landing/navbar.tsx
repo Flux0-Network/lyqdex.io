@@ -109,16 +109,6 @@ export function Navbar() {
         <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1.5" />
 
         <ThemeToggle />
-
-        <Link href="/login" className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition rounded-full">
-          Anmelden
-        </Link>
-        <Link
-          href="/register"
-          className="px-5 py-2 text-sm font-semibold rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 transition"
-        >
-          Registrieren
-        </Link>
       </nav>
 
       {/* Mobile: compact centered pill */}
@@ -149,22 +139,6 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
-          <div className="pt-2 mt-1 border-t border-gray-100 dark:border-white/[0.06] flex flex-col gap-2">
-            <Link
-              href="/login"
-              className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08] rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.04] transition"
-              onClick={() => setMobileOpen(false)}
-            >
-              Anmelden
-            </Link>
-            <Link
-              href="/register"
-              className="px-4 py-3 text-sm text-center font-semibold bg-black dark:bg-white text-white dark:text-black rounded-xl hover:bg-gray-900 dark:hover:bg-gray-100 transition"
-              onClick={() => setMobileOpen(false)}
-            >
-              Registrieren
-            </Link>
-          </div>
         </div>
       )}
     </div>
