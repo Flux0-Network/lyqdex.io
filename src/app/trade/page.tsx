@@ -65,7 +65,7 @@ export default function TradePage() {
               saveRef={saveChartRef}
             />
           </div>
-          <div className="h-[110px] shrink-0 border-t border-white/[0.06]">
+          <div className="h-[130px] shrink-0 border-t border-white/[0.06]">
             <PositionsPanel />
           </div>
         </div>
