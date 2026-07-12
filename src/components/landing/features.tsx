@@ -81,7 +81,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-24 px-5 bg-gray-50 dark:bg-transparent">
+    <section className="py-24 px-5 bg-transparent">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -93,7 +93,7 @@ export function Features() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.03] text-xs text-gray-500 mb-4">
             Was LyqDex kann
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black dark:text-white">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
             Mehr als nur ein Exchange.
             <span className="block mt-1 bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">
               Deine komplette Trading-Plattform.
@@ -112,7 +112,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.4 }}
-              className="relative p-5 rounded-xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.04] dark:backdrop-blur-sm hover:border-black/[0.1] dark:hover:border-white/[0.14] dark:hover:bg-white/[0.06] transition"
+              className="relative p-5 rounded-xl border border-white/[0.07] bg-white/[0.04] backdrop-blur-sm hover:border-white/[0.14] hover:bg-white/[0.06] transition"
             >
               {f.tag && (
                 <span className={`absolute top-3 right-3 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
@@ -126,7 +126,7 @@ export function Features() {
               <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${f.bg} mb-3`}>
                 <f.icon className={`h-4 w-4 ${f.color}`} strokeWidth={1.5} />
               </div>
-              <h3 className="font-semibold text-black dark:text-white mb-1 text-sm">{f.title}</h3>
+              <h3 className="font-semibold text-white mb-1 text-sm">{f.title}</h3>
               <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
             </motion.div>
           ))}

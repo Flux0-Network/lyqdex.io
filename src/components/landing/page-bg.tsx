@@ -4,7 +4,7 @@ export function PageBg() {
   return (
     <>
       {/* Dark mode only — hidden in light mode */}
-      <div className="hidden dark:block fixed inset-0 -z-10 overflow-hidden" style={{ background: "#08010f" }}>
+      <div className="fixed inset-0 -z-10 overflow-hidden" style={{ background: "#08010f" }}>
 
         {/* Main purple radial gradient — center top, like Galxe */}
         <div style={{
