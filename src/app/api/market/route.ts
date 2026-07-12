@@ -19,6 +19,8 @@ const TF_OKX: Record<string, string> = {
 
 const COIN_IDS: Record<string, string> = {
   BTCUSDT: "bitcoin", ETHUSDT: "ethereum", SOLUSDT: "solana",
+  BNBUSDT: "binancecoin", XRPUSDT: "ripple", DOGEUSDT: "dogecoin",
+  ADAUSDT: "cardano", AVAXUSDT: "avalanche-2",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -126,7 +128,7 @@ type Candle = { time: number; open: number; high: number; low: number; close: nu
 async function candlesBinance(symbol: string, interval: string): Promise<Candle[] | null> {
   try {
     const tf = TF_BINANCE[interval] ?? "1h";
-    const r = await fetch(`${BINANCE}/klines?symbol=${symbol}&interval=${tf}&limit=200`, { next: { revalidate: 10 } });
+    const r = await fetch(`${BINANCE}/klines?symbol=${symbol}&interval=${tf}&limit=1000`, { next: { revalidate: 10 } });
     const d = await safeJson<string[][]>(r!);
     if (!d) return null;
     return d.map(k => ({
@@ -141,7 +143,7 @@ async function candlesBinance(symbol: string, interval: string): Promise<Candle[
 async function candlesBybit(symbol: string, interval: string): Promise<Candle[] | null> {
   try {
     const tf = TF_BYBIT[interval] ?? "60";
-    const r = await fetch(`${BYBIT}/kline?category=spot&symbol=${symbol}&interval=${tf}&limit=200`, { next: { revalidate: 10 } });
+    const r = await fetch(`${BYBIT}/kline?category=spot&symbol=${symbol}&interval=${tf}&limit=1000`, { next: { revalidate: 10 } });
     const d = await safeJson<{ result?: { list?: string[][] } }>(r!);
     const list = d?.result?.list;
     if (!list) return null;
@@ -158,7 +160,7 @@ async function candlesOKX(symbol: string, interval: string): Promise<Candle[] | 
   const instId = symbol.replace("USDT", "-USDT");
   const tf = TF_OKX[interval] ?? "1H";
   try {
-    const r = await fetch(`${OKX}/candles?instId=${instId}&bar=${tf}&limit=200`, { next: { revalidate: 10 } });
+    const r = await fetch(`${OKX}/candles?instId=${instId}&bar=${tf}&limit=300`, { next: { revalidate: 10 } });
     const d = await safeJson<{ data?: string[][] }>(r!);
     const data = d?.data;
     if (!data) return null;
@@ -220,7 +222,7 @@ export async function GET(request: Request) {
 
   // Best available candles
   const candles = cBinance ?? cBybit ?? cOKX
-    ?? generateCandles(aggPrice, 200, INTERVAL_SECS[interval] ?? 3600);
+    ?? generateCandles(aggPrice, 1000, INTERVAL_SECS[interval] ?? 3600);
 
   const candleSource = cBinance ? "binance" : cBybit ? "bybit" : cOKX ? "okx" : "simulated";
 
