@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   IconStar, IconListDetails, IconChartLine, IconActivity,
-  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight,
+  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft,
 } from "@tabler/icons-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -197,6 +197,10 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
+  const [action, setAction] = useState<{ id: string; currency: string; type: "deposit" | "withdraw" } | null>(null);
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [txError, setTxError] = useState("");
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
@@ -218,6 +222,33 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
         setShowAdd(false);
       }
     } finally { setCreating(null); }
+  }
+
+  function openAction(id: string, currency: string, type: "deposit" | "withdraw") {
+    setTxError("");
+    setAmount("");
+    setAction(prev => (prev && prev.id === id && prev.type === type ? null : { id, currency, type }));
+  }
+
+  async function submitAction() {
+    if (!action) return;
+    const amt = parseFloat(amount);
+    if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
+    setBusy(true);
+    setTxError("");
+    try {
+      const res = await fetch("/api/wallet/transaction", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
+      setWallets(prev => (prev ?? []).map(w => w.id === d.wallet.id ? d.wallet : w));
+      setAction(null);
+      setAmount("");
+    } catch {
+      setTxError("Fehler bei der Transaktion.");
+    } finally { setBusy(false); }
   }
 
   if (authed === false) {
@@ -272,16 +303,52 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
         {wallets.length === 0 && <div className="text-gray-600 text-xs py-2">Noch keine Wallets vorhanden — oben rechts eins hinzufügen.</div>}
         {wallets.map(w => {
           const val = parseFloat(w.balance) * priceOf(w.currency);
+          const open = action?.id === w.id;
           return (
-            <div key={w.id} className="flex items-center justify-between py-1.5">
-              <span className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: colorOf(`${w.currency}USDT`) }}>{w.currency.slice(0, 2)}</span>
-                <span className="text-[12px] text-white font-medium">{w.currency}</span>
-              </span>
-              <span className="text-right">
-                <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{parseFloat(w.balance).toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
-                <span className="text-[10px] text-gray-600 tabular-nums">${fmtPrice(val)}</span>
-              </span>
+            <div key={w.id} className="py-1.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: colorOf(`${w.currency}USDT`) }}>{w.currency.slice(0, 2)}</span>
+                  <span className="text-[12px] text-white font-medium">{w.currency}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-right">
+                    <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{parseFloat(w.balance).toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
+                    <span className="text-[10px] text-gray-600 tabular-nums">${fmtPrice(val)}</span>
+                  </span>
+                  <span className="flex flex-col gap-0.5">
+                    <button onClick={() => openAction(w.id, w.currency, "deposit")} title="Einzahlen" className={`h-4 w-4 rounded flex items-center justify-center border transition ${open && action?.type === "deposit" ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" : "border-white/10 text-gray-500 hover:text-emerald-400 hover:border-emerald-500/40"}`}>
+                      <IconArrowDownLeft className="h-2.5 w-2.5" />
+                    </button>
+                    <button onClick={() => openAction(w.id, w.currency, "withdraw")} title="Auszahlen" className={`h-4 w-4 rounded flex items-center justify-center border transition ${open && action?.type === "withdraw" ? "border-red-500/50 text-red-400 bg-red-500/10" : "border-white/10 text-gray-500 hover:text-red-400 hover:border-red-500/40"}`}>
+                      <IconArrowUpRight className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                </span>
+              </div>
+
+              {open && (
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    autoFocus
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") submitAction(); if (e.key === "Escape") setAction(null); }}
+                    placeholder={`Betrag ${w.currency}`}
+                    className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50"
+                  />
+                  <button
+                    onClick={submitAction}
+                    disabled={busy}
+                    className={`text-[11px] px-2.5 py-1 rounded font-medium transition disabled:opacity-40 ${action?.type === "deposit" ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-red-600 hover:bg-red-500 text-white"}`}
+                  >
+                    {busy ? "…" : action?.type === "deposit" ? "Einzahlen" : "Auszahlen"}
+                  </button>
+                </div>
+              )}
+              {open && txError && <p className="text-[10px] text-red-400 mt-1">{txError}</p>}
             </div>
           );
         })}
