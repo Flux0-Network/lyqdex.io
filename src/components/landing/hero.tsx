@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { HeroBg } from "./hero-bg";
 
 const CANDLES = [
   [0,   68,  80,  40,  55],
@@ -178,7 +179,8 @@ const PILLS = [
 
 export function Hero() {
   return (
-    <section className="min-h-screen overflow-hidden relative flex items-center">
+    <section className="min-h-screen bg-[#06070f] overflow-hidden relative flex items-center">
+      <HeroBg />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-24 pb-14">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">

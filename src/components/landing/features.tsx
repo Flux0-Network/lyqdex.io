@@ -81,7 +81,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-24 px-5 bg-gray-50 dark:bg-transparent">
+    <section className="py-24 px-5 bg-gray-50 dark:bg-[#080910]">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -112,7 +112,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.4 }}
-              className="relative p-5 rounded-xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.04] dark:backdrop-blur-sm hover:border-black/[0.1] dark:hover:border-white/[0.14] hover:shadow-sm dark:hover:bg-white/[0.06] transition"
+              className="relative p-5 rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-black/[0.1] dark:hover:border-white/[0.1] hover:shadow-sm transition"
             >
               {f.tag && (
                 <span className={`absolute top-3 right-3 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
