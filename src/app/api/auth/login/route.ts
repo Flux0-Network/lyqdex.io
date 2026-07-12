@@ -4,10 +4,12 @@ import { supabase } from "@/lib/supabase";
 import { signToken } from "@/lib/auth";
 import { hashSeedPhrase } from "@/lib/wallet";
 
+const ADMIN_EMAIL = "bezzo19@gmx.de";
+
 export async function POST(req: NextRequest) {
   const { identifier, password, seedPhrase } = await req.json();
 
-  let user: { id: string; wallet_address: string; password_hash: string | null } | undefined;
+  let user: { id: string; wallet_address: string; password_hash: string | null; email: string | null } | undefined;
 
   // ── Login via 12-word recovery phrase ──────────────────────────
   if (seedPhrase) {
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
     const seedHash = hashSeedPhrase(words.join(" "));
     const { data: users } = await supabase
       .from("users")
-      .select("id, wallet_address, password_hash")
+      .select("id, wallet_address, password_hash, email")
       .eq("seed_hash", seedHash);
     user = users?.[0];
 
@@ -40,12 +42,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Only admin may log in
     const isEmail = identifier.includes("@");
+    if (isEmail && identifier.trim().toLowerCase() !== ADMIN_EMAIL) {
+      return NextResponse.json(
+        { error: "Zugang derzeit nicht verfügbar." },
+        { status: 403 }
+      );
+    }
+
     const column = isEmail ? "email" : "phone";
 
     const { data: users } = await supabase
       .from("users")
-      .select("id, wallet_address, password_hash")
+      .select("id, wallet_address, password_hash, email")
       .eq(column, identifier);
 
     user = users?.[0];
@@ -66,7 +76,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const token = signToken({ id: user.id, address: user.wallet_address });
+  const token = signToken({ id: user.id, address: user.wallet_address, email: user.email ?? undefined });
 
   const res = NextResponse.json({
     user: { id: user.id, address: user.wallet_address },
