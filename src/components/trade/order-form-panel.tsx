@@ -56,10 +56,13 @@ export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC", mode = "demo"
 
   function handleOrder() {
     if (amt <= 0 || effPrice <= 0) return;
-    const trade = { side, price: effPrice, amount: amt, leverage, symbol, time: Date.now() };
-    const existing = JSON.parse(localStorage.getItem("lyqdex_trades") || "[]");
-    existing.push(trade);
-    localStorage.setItem("lyqdex_trades", JSON.stringify(existing.slice(-100)));
+    const trade = {
+      id: Math.random().toString(36).slice(2, 10),
+      side, price: effPrice, amount: amt, leverage, symbol, time: Date.now(),
+    };
+    const positions = JSON.parse(localStorage.getItem("lyqdex_positions") || "[]");
+    positions.push(trade);
+    localStorage.setItem("lyqdex_positions", JSON.stringify(positions.slice(-50)));
     window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: trade }));
     setAmount("");
     setConfirmed(true);
