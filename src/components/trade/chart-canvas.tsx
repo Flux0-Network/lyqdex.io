@@ -369,11 +369,12 @@ export function ChartCanvas({
     const iMax = rmi + Math.ceil((PAD.right + 24) / cw);
     for (let i=lmi;i<=iMax;i+=le) {
       const x=cX(i);
-      if (x < PAD.left+30 || x > W-4) continue;
+      if (x < PAD.left+2 || x > W-4) continue;
       const t = candles[i]?.time ?? (candles[lastIdx]?.time ?? 0) + (i - lastIdx) * barDt;
-      // right-align the outermost labels so they don't clip off-screen
-      if (x > W-38) { ctx.textAlign="right"; ctx.fillText(fmtTime(t, visRange), W-3, H-PAD.bottom+3); }
-      else          { ctx.textAlign="center"; ctx.fillText(fmtTime(t, visRange), x, H-PAD.bottom+3); }
+      // align the outermost labels so they don't clip off-screen on either side
+      if (x > W-38)          { ctx.textAlign="right";  ctx.fillText(fmtTime(t, visRange), W-3, H-PAD.bottom+3); }
+      else if (x < PAD.left+38) { ctx.textAlign="left"; ctx.fillText(fmtTime(t, visRange), PAD.left+2, H-PAD.bottom+3); }
+      else                   { ctx.textAlign="center"; ctx.fillText(fmtTime(t, visRange), x, H-PAD.bottom+3); }
     }
 
     // ── Drawings
