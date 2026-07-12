@@ -49,6 +49,7 @@ export function ChartPanel({
   const [showVolume,   setShowVolume]   = useState(true);
   const [candleColors, setCandleColors] = useState({ up: "#26a69a", down: "#ef5350" });
   const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
+  const [chartBg,      setChartBg]      = useState("#0a0b10");
   const [showSettings, setShowSettings] = useState(false);
   const [posPanel,     setPosPanel]     = useState(false);
   const settingsRef   = useRef<HTMLDivElement>(null);
@@ -200,6 +201,12 @@ export function ChartPanel({
                       Short
                     </label>
                   </div>
+                  <div className="border-t border-white/[0.06] my-2" />
+                  <p className="text-gray-600 mb-1.5 uppercase tracking-widest text-[8px]">Hintergrund</p>
+                  <label className="flex items-center gap-2 cursor-pointer text-gray-400">
+                    <input type="color" value={chartBg} onChange={e => setChartBg(e.target.value)} className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0" />
+                    Chart Hintergrund
+                  </label>
                 </div>
               )}
             </div>
@@ -244,6 +251,7 @@ export function ChartPanel({
                 onDeleteDrawing={id => setDrawings(prev => prev.filter(x => x.id !== id))}
                 saveRef={canvasSaveRef}
                 symbol={symbol}
+                chartBg={chartBg}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-600 text-xs">

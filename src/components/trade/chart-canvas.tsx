@@ -49,7 +49,6 @@ function distToSeg(px: number, py: number, ax: number, ay: number, bx: number, b
   return Math.hypot(px - ax - t * dx, py - ay - t * dy);
 }
 
-// Smart time label based on visible range
 function fmtTime(ts: number, rangeSec: number): string {
   const d = new Date(ts * 1000);
   const H = (n: number) => n.toString().padStart(2, "0");
@@ -72,7 +71,7 @@ export function ChartCanvas({
   magnetMode = "off",
   activeTool = "cursor", drawings = [],
   onAddDrawing, onUpdateDrawing, onDeleteDrawing,
-  saveRef, symbol = "BTCUSDT",
+  saveRef, symbol = "BTCUSDT", chartBg = "#0a0b10",
 }: {
   candles:       Candle[];
   userTrades?:   UserTrade[];
@@ -89,6 +88,7 @@ export function ChartCanvas({
   onDeleteDrawing?: (id: string) => void;
   saveRef?:      React.MutableRefObject<(() => void) | null>;
   symbol?:       string;
+  chartBg?:      string;
 }) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,9 +127,16 @@ export function ChartCanvas({
     const rp     = 16;
     const rmi    = candles.length - 1 - Math.floor(offset / cw);
     const lmi    = Math.max(0, rmi - Math.ceil(chartW / cw) - 2);
-    const vis    = candles.slice(lmi, rmi + 1);
+    // Only include real candles for price range calculation
+    const vis    = candles.slice(lmi, Math.min(candles.length, rmi + 1));
     let lo = Infinity, hi = -Infinity;
     for (const c of vis) { if (c.low < lo) lo = c.low; if (c.high > hi) hi = c.high; }
+    // Fallback when fully scrolled into future (no visible real candles)
+    if (lo > hi) {
+      const last = candles[candles.length - 1];
+      lo = (last?.low ?? 0) * 0.99;
+      hi = (last?.high ?? 1) * 1.01;
+    }
     const pr = (hi - lo) * 0.07; lo -= pr; hi += pr;
     if (yZoom !== 1.0) { const mid=(lo+hi)/2, half=(hi-lo)/2/yZoom; lo=mid-half; hi=mid+half; }
     const priceRange = hi - lo || 1;
@@ -175,8 +182,8 @@ export function ChartCanvas({
     if (magnetMode === "off") return point;
     const { pY, lmi, rmi } = getCoords(W, H);
     let ni = lmi;
-    for (let i = lmi; i <= rmi; i++) { if (candles[i].time >= point.time) { ni = i; break; } }
-    const c = candles[Math.max(lmi, Math.min(rmi, ni))];
+    for (let i = lmi; i <= rmi; i++) { if (candles[i]?.time >= point.time) { ni = i; break; } }
+    const c = candles[Math.max(lmi, Math.min(Math.min(candles.length-1,rmi), ni))];
     if (!c) return point;
     let snapP = point.price, snapD = Infinity;
     for (const p of [c.open, c.high, c.low, c.close]) {
@@ -240,8 +247,9 @@ export function ChartCanvas({
     const { chartW, priceH, cw, rp, rmi, lmi, vis, lo, hi, priceRange, volH, logLo, logRange, pY, cX, vY, xyToPoint, pointToX } = getCoords(W, H);
     const bodyW = Math.max(1, cw * 0.55);
     const CUP = candleColors.up, CDN = candleColors.down;
+    const safeRmi = Math.min(candles.length - 1, rmi);
 
-    ctx.fillStyle = "#0a0b10"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = chartBg; ctx.fillRect(0, 0, W, H);
 
     // ── Grid + price labels
     ctx.font = "10px ui-monospace,monospace"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
@@ -269,7 +277,7 @@ export function ChartCanvas({
       ctx.strokeStyle = maColors[mi]; ctx.lineWidth = 1; ctx.beginPath();
       let started = false;
       for (let i = lmi; i <= rmi; i++) {
-        const v = maData[mi][i]; if (v == null) continue;
+        const v = maData[mi][i]; if (v == null) continue; // null = warmup, undefined = future
         if (!started) { ctx.moveTo(cX(i), pY(v)); started = true; } else ctx.lineTo(cX(i), pY(v));
       }
       ctx.stroke();
@@ -278,7 +286,7 @@ export function ChartCanvas({
     // ── Volume
     if (showVolume) {
       for (let i = lmi; i <= rmi; i++) {
-        const c = candles[i]; if (!c.volume) continue;
+        const c = candles[i]; if (!c || !c.volume) continue;
         ctx.fillStyle = c.close>=c.open ? "rgba(38,166,154,0.3)" : "rgba(239,83,80,0.3)";
         const top = vY(c.volume); ctx.fillRect(cX(i)-bodyW/2, top, bodyW, H-PAD.bottom-top);
       }
@@ -289,14 +297,16 @@ export function ChartCanvas({
     // ── Chart body
     if (chartType === "candle") {
       for (let i = lmi; i <= rmi; i++) {
-        const c = candles[i], x = cX(i), col = c.close>=c.open ? CUP : CDN;
+        const c = candles[i]; if (!c) break;
+        const x = cX(i), col = c.close>=c.open ? CUP : CDN;
         ctx.strokeStyle = col; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(x, pY(c.high)); ctx.lineTo(x, pY(c.low)); ctx.stroke();
         ctx.fillStyle = col; ctx.fillRect(x-bodyW/2, pY(Math.max(c.open,c.close)), bodyW, Math.max(1, pY(Math.min(c.open,c.close))-pY(Math.max(c.open,c.close))));
       }
     } else if (chartType === "bar") {
       for (let i = lmi; i <= rmi; i++) {
-        const c = candles[i], x = cX(i), tick = Math.max(2, bodyW*0.8);
+        const c = candles[i]; if (!c) break;
+        const x = cX(i), tick = Math.max(2, bodyW*0.8);
         ctx.strokeStyle = c.close>=c.open ? CUP : CDN; ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, pY(c.high)); ctx.lineTo(x, pY(c.low));
@@ -306,13 +316,13 @@ export function ChartCanvas({
       }
     } else {
       ctx.beginPath();
-      for (let i=lmi;i<=rmi;i++){const x=cX(i),y=pY(candles[i].close);if(i===lmi)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+      for (let i=lmi;i<=rmi;i++){const c=candles[i];if(!c)break;const x=cX(i),y=pY(c.close);if(i===lmi)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
       if (chartType==="area") {
-        ctx.lineTo(cX(rmi),PAD.top+priceH);ctx.lineTo(cX(lmi),PAD.top+priceH);ctx.closePath();
+        ctx.lineTo(cX(safeRmi),PAD.top+priceH);ctx.lineTo(cX(lmi),PAD.top+priceH);ctx.closePath();
         const g=ctx.createLinearGradient(0,PAD.top,0,PAD.top+priceH);
         g.addColorStop(0,"rgba(38,166,154,0.28)");g.addColorStop(1,"rgba(38,166,154,0)");
         ctx.fillStyle=g;ctx.fill();ctx.beginPath();
-        for(let i=lmi;i<=rmi;i++){const x=cX(i),y=pY(candles[i].close);if(i===lmi)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+        for(let i=lmi;i<=safeRmi;i++){const c=candles[i];if(!c)break;const x=cX(i),y=pY(c.close);if(i===lmi)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
       }
       ctx.strokeStyle=CUP;ctx.lineWidth=1.5;ctx.stroke();
     }
@@ -320,8 +330,9 @@ export function ChartCanvas({
     // ── User trades
     for (const trade of userTrades) {
       const ts=Math.floor(trade.time/1000);let ni=lmi,nd=Infinity;
-      for(let i=lmi;i<=rmi;i++){const d=Math.abs(candles[i].time-ts);if(d<nd){nd=d;ni=i;}}
-      const c=candles[ni],x=cX(ni),isBuy=trade.side==="buy";
+      for(let i=lmi;i<=Math.min(candles.length-1,rmi);i++){const ci=candles[i];if(!ci)break;const d=Math.abs(ci.time-ts);if(d<nd){nd=d;ni=i;}}
+      const c=candles[ni];if(!c)continue;
+      const x=cX(ni),isBuy=trade.side==="buy";
       const y=isBuy?pY(c.low)+16:pY(c.high)-16;
       ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fillStyle=isBuy?"#26a69a":"#ef5350";ctx.fill();
       ctx.fillStyle="#fff";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
@@ -342,11 +353,12 @@ export function ChartCanvas({
 
     // ── Time axis (smart formatting)
     ctx.fillStyle="#6b7280";ctx.font="10px ui-monospace,monospace";ctx.textAlign="center";ctx.textBaseline="top";
-    const visRange = (candles[rmi]?.time ?? 0) - (candles[lmi]?.time ?? 0);
+    const visRange = (candles[safeRmi]?.time ?? 0) - (candles[lmi]?.time ?? 0);
     const le = Math.max(1, Math.ceil(90/cw));
     for (let i=lmi;i<=rmi;i+=le) {
+      const c=candles[i];if(!c)break;
       const x=cX(i);if(x<PAD.left+30||x>W-PAD.right-10)continue;
-      ctx.fillText(fmtTime(candles[i].time, visRange), x, H-PAD.bottom+3);
+      ctx.fillText(fmtTime(c.time, visRange), x, H-PAD.bottom+3);
     }
 
     // ── Drawings
@@ -433,7 +445,7 @@ export function ChartCanvas({
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candles, candleWidth, offset, yZoom, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode]);
+  }, [candles, candleWidth, offset, yZoom, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode, chartBg]);
 
   useEffect(() => { draw(); }, [draw]);
 
@@ -454,10 +466,9 @@ export function ChartCanvas({
     return ()=>obs.disconnect();
   }, [draw]);
 
-  // ── Touch events — two-finger pan + spread/vertical zoom
+  // ── Touch events — two-finger pan + spread zoom
   useEffect(() => {
     const el=containerRef.current;if(!el)return;
-    // Two-finger state (closure vars, not React state)
     let t2: {prevMidX:number;prevMidY:number;prevSpread:number}|null=null;
 
     function onTS(e:TouchEvent) {
@@ -481,7 +492,7 @@ export function ChartCanvas({
       if (e.touches.length===1&&dragRef.current) {
         const dx=e.touches[0].clientX-dragRef.current.startX;
         const now=performance.now();
-        setOffset(Math.max(0,dragRef.current.startOffset+dx));
+        setOffset(dragRef.current.startOffset+dx);
         if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.touches[0].clientX-lastMXRef.current.x)/dt*16;}
         lastMXRef.current={x:e.touches[0].clientX,t:performance.now()};
       } else if (e.touches.length===2&&t2) {
@@ -489,19 +500,15 @@ export function ChartCanvas({
         const midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
         const spread=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
 
-        // Pan from horizontal midpoint movement
+        // Horizontal pan
         const panDx=midX-t2.prevMidX;
-        setOffset(p=>Math.max(0,p+panDx));
+        setOffset(p=>p+panDx);
 
-        // Zoom from spread change (pinch) + vertical midpoint movement
-        // Up swipe = zoom in (bigger candles), down swipe = zoom out
+        // Zoom only from spread (dead zone 1% to filter noise), no vertical factor
         const spreadRatio=t2.prevSpread>0?spread/t2.prevSpread:1;
-        const dampedSpread=1+(spreadRatio-1)*0.25;
-        const panDy=midY-t2.prevMidY;
-        const vertFactor=1-panDy*0.007;
-        const combined=dampedSpread*Math.max(0.5,Math.min(2,vertFactor));
-        if(Math.abs(combined-1)>0.0005){
-          setCandleWidth(w=>Math.min(40,Math.max(2,w*combined)));
+        if(Math.abs(spreadRatio-1)>0.01){
+          const damped=1+(spreadRatio-1)*0.35;
+          setCandleWidth(w=>Math.min(40,Math.max(2,w*damped)));
         }
 
         t2.prevMidX=midX;t2.prevMidY=midY;t2.prevSpread=spread;
@@ -511,7 +518,7 @@ export function ChartCanvas({
       if(dragRef.current){
         dragRef.current=null;
         const vel=velRef.current;
-        if(Math.abs(vel)>0.5){let v=vel;function step(){v*=0.88;if(Math.abs(v)<0.3)return;setOffset(p=>Math.max(0,p+v));animRef.current=requestAnimationFrame(step);}requestAnimationFrame(step);}
+        if(Math.abs(vel)>0.5){let v=vel;function step(){v*=0.88;if(Math.abs(v)<0.3)return;setOffset(p=>p+v);animRef.current=requestAnimationFrame(step);}requestAnimationFrame(step);}
       }
       t2=null;
     }
@@ -543,7 +550,7 @@ export function ChartCanvas({
     }
     const oldCW=Math.max(2,candleWidth),newCW=Math.min(40,Math.max(2,oldCW*(e.deltaY>0?0.85:1.18)));
     const rp=16,cW=rect.width-PAD.left-PAD.right;
-    setOffset(p=>Math.max(0,p+(PAD.left+cW-rp-mx)*(newCW/oldCW-1)));
+    setOffset(p=>p+(PAD.left+cW-rp-mx)*(newCW/oldCW-1));
     setCandleWidth(newCW);
   }
 
@@ -610,7 +617,7 @@ export function ChartCanvas({
       const newCW=Math.min(40,Math.max(2,xDragRef.current.startCW*Math.pow(1.005,dx)));
       const ratio=newCW/xDragRef.current.startCW;
       setCandleWidth(newCW);
-      setOffset(Math.max(0,xDragRef.current.startOffset*ratio));
+      setOffset(xDragRef.current.startOffset*ratio);
       return;
     }
     // Drag drawing
@@ -630,7 +637,7 @@ export function ChartCanvas({
     // Pan
     if(dragRef.current){
       const dx=e.clientX-dragRef.current.startX,now=performance.now();
-      setOffset(Math.max(0,dragRef.current.startOffset+dx));
+      setOffset(dragRef.current.startOffset+dx);
       if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.clientX-lastMXRef.current.x)/dt*16;}
       lastMXRef.current={x:e.clientX,t:performance.now()};
     }
@@ -642,7 +649,7 @@ export function ChartCanvas({
     if(dragRef.current){
       dragRef.current=null;
       const vel=velRef.current;
-      if(Math.abs(vel)>0.5){let v=vel;function step(){v*=0.88;if(Math.abs(v)<0.3)return;setOffset(p=>Math.max(0,p+v));animRef.current=requestAnimationFrame(step);}requestAnimationFrame(step);}
+      if(Math.abs(vel)>0.5){let v=vel;function step(){v*=0.88;if(Math.abs(v)<0.3)return;setOffset(p=>p+v);animRef.current=requestAnimationFrame(step);}requestAnimationFrame(step);}
       return;
     }
     if(activeTool!=="cursor"&&drawStartRef.current){
@@ -676,8 +683,8 @@ export function ChartCanvas({
     >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
-      {/* Price axis scale buttons */}
-      <div className="absolute flex flex-col gap-0.5 z-10 pointer-events-auto" style={{ right: 4, bottom: 34 }}>
+      {/* Price axis scale buttons — A and L side by side */}
+      <div className="absolute flex flex-row gap-0.5 z-10 pointer-events-auto" style={{ right: 4, bottom: 34 }}>
         <button
           onClick={() => setYZoom(1)}
           title="Auto Scale"
