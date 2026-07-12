@@ -5,7 +5,7 @@ import { IconCheck } from "@tabler/icons-react";
 
 const LEVERAGES = [1, 2, 5, 10, 20, 50, 100];
 
-export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC" }: { symbol?: string; base?: string }) {
+export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC", mode = "demo" }: { symbol?: string; base?: string; mode?: "demo" | "real" }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [price, setPrice] = useState("");
@@ -29,17 +29,19 @@ export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC" }: { symbol?: 
     return () => { alive = false; clearInterval(iv); };
   }, [symbol]);
 
-  // Available USDT (buying power)
+  // Available USDT (buying power) — re-fetches when mode changes
   useEffect(() => {
     fetch("/api/wallet")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d?.wallets) return;
-        const usdt = d.wallets.find((w: { currency: string; balance: string }) => w.currency === "USDT");
-        setAvail(usdt ? parseFloat(usdt.balance) : 0);
+        const usdt = d.wallets.find((w: { currency: string; balance: string; demo_balance?: string }) => w.currency === "USDT");
+        if (!usdt) { setAvail(0); return; }
+        const bal = mode === "real" ? usdt.balance : (usdt.demo_balance ?? "0");
+        setAvail(parseFloat(bal || "0"));
       })
       .catch(() => {});
-  }, []);
+  }, [mode]);
 
   const effPrice = orderType === "limit" && price ? parseFloat(price) : mktPrice;
   const amt = parseFloat(amount) || 0;

@@ -17,6 +17,7 @@ export default function TradePage() {
   const [timeframe,    setTimeframe]    = useState("1H");
   const [walletAddr,   setWalletAddr]   = useState<string | null>(null);
   const [replayActive, setReplayActive] = useState(false);
+  const [mode,         setMode]         = useState<"demo" | "real">("demo");
 
   const replayToggleFn = useRef<(() => void) | null>(null);
   const saveChartRef   = useRef<(() => void) | null>(null);
@@ -67,7 +68,7 @@ export default function TradePage() {
         <div className="w-[220px] shrink-0 hidden md:flex flex-col border-l border-white/[0.05]">
           {/* Order form (top) */}
           <div className="shrink-0 border-b border-white/[0.06]">
-            <OrderFormPanel symbol={symbol} base={baseOf(symbol)} />
+            <OrderFormPanel symbol={symbol} base={baseOf(symbol)} mode={mode} />
           </div>
 
           {/* Orderbook (middle, grows) */}
@@ -77,7 +78,7 @@ export default function TradePage() {
 
           {/* Wallet (bottom, fixed) */}
           <div className="h-[140px] shrink-0">
-            <WalletPanel />
+            <WalletPanel mode={mode} onModeChange={setMode} />
           </div>
         </div>
       </div>
