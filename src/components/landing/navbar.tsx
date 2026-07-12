@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { IconChevronDown, IconX, IconMenu2 } from "@tabler/icons-react";
+import { ThemeToggle } from "./theme-toggle";
 
 const navLinks = [
   {
@@ -72,6 +73,7 @@ export function Navbar() {
         </Link>
 
         {navLinks.map((item) => (
+
           <div key={item.label} className="relative">
             {item.href ? (
               <Link href={item.href} className="flex items-center px-4 py-2 rounded-full text-sm text-gray-500 hover:text-white transition">
@@ -89,6 +91,8 @@ export function Navbar() {
             {item.dropdown && openMenu === item.label && <Dropdown items={item.dropdown} />}
           </div>
         ))}
+        <div className="w-px h-4 bg-white/10 mx-1.5" />
+        <ThemeToggle />
       </nav>
 
       {/* Mobile */}
