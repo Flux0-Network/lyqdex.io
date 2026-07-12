@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChartCanvas, type Candle } from "./chart-canvas";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { ChartCanvas, type Candle, type Drawing, type DrawingTool, type ChartType } from "./chart-canvas";
+import { ChartToolbar } from "./chart-toolbar";
 import { ReplayBar } from "./replay-bar";
 import { useMarketWS } from "@/hooks/use-market-ws";
 import { useReplay } from "@/hooks/use-replay";
+import { IconSettings, IconX } from "@tabler/icons-react";
 
 interface UserTrade {
   side: "buy" | "sell";
@@ -28,14 +30,22 @@ function calcMA(candles: Candle[], period: number) {
 }
 
 export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
-  const [history, setHistory]         = useState<Candle[]>([]);
+  const [history,    setHistory]    = useState<Candle[]>([]);
   const [hoverCandle, setHoverCandle] = useState<Candle | null>(null);
-  const [userTrades, setUserTrades]   = useState<UserTrade[]>([]);
+  const [userTrades, setUserTrades] = useState<UserTrade[]>([]);
+
+  // Chart settings
+  const [activeTool,  setActiveTool]  = useState<DrawingTool>("cursor");
+  const [drawings,    setDrawings]    = useState<Drawing[]>([]);
+  const [chartType,   setChartType]   = useState<ChartType>("candle");
+  const [visibleMAs,  setVisibleMAs]  = useState([true, true, true, true]);
+  const [showVolume,  setShowVolume]  = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   const { candle: liveCandle, source: wsSource, connected } = useMarketWS("BTCUSDT", timeframe);
   const replay = useReplay(history);
 
-  // Load historical candles via REST
   useEffect(() => {
     let cancelled = false;
     const interval = TF_INTERVAL[timeframe] ?? "1h";
@@ -46,13 +56,23 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
     return () => { cancelled = true; };
   }, [timeframe]);
 
-  // Exit replay on timeframe switch
   useEffect(() => {
     if (replay.active) replay.toggle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe]);
 
-  // Merge live candle into history (skipped during replay)
+  // Close settings panel on outside click
+  useEffect(() => {
+    if (!showSettings) return;
+    function handler(e: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showSettings]);
+
   const candles = useMemo<Candle[]>(() => {
     if (replay.active) return history.slice(0, replay.cursor);
     if (!liveCandle || !history.length) return history;
@@ -61,14 +81,12 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
     return [...history, liveCandle].slice(-500);
   }, [history, liveCandle, replay.active, replay.cursor]);
 
-  // Absorb closed candle into history
   useEffect(() => {
     if (replay.active || !liveCandle || !history.length) return;
     const last = history[history.length - 1];
     if (liveCandle.time > last.time) setHistory(prev => [...prev, liveCandle].slice(-500));
   }, [liveCandle, history, replay.active]);
 
-  // User trades
   useEffect(() => {
     try { setUserTrades(JSON.parse(localStorage.getItem("lyqdex_trades") || "[]")); } catch {}
   }, []);
@@ -79,7 +97,6 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
     return () => window.removeEventListener("lyqdex-trade", handler);
   }, []);
 
-  // In replay mode, only show trades up to the current cursor candle's timestamp
   const visibleTrades = useMemo(() => {
     if (!replay.active || !candles.at(-1)) return userTrades;
     const cutoff = candles.at(-1)!.time * 1000;
@@ -112,8 +129,8 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
             {isUp ? "+" : ""}{fmt(delta)} ({isUp ? "+" : ""}{deltaPct.toFixed(2)}%)
           </span>
           <span className="hidden xl:flex items-center gap-2 ml-1">
-            {maValues.map(({ label, color, value }) =>
-              value ? (
+            {maValues.map(({ label, color, value }, i) =>
+              visibleMAs[i] && value ? (
                 <span key={label} style={{ color }} className="tabular-nums">
                   {label}: {fmt(value)}
                 </span>
@@ -121,8 +138,61 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
             )}
           </span>
 
-          {/* Right: replay toggle + WS status */}
-          <span className="ml-auto flex items-center gap-2">
+          <span className="ml-auto flex items-center gap-2 relative">
+            {/* Settings gear */}
+            <div ref={settingsRef} className="relative">
+              <button
+                onClick={() => setShowSettings(s => !s)}
+                title="Chart-Einstellungen"
+                className={`text-[9px] px-1 py-0.5 rounded border transition ${
+                  showSettings
+                    ? "border-white/[0.18] text-gray-300"
+                    : "border-white/[0.06] text-gray-600 hover:text-gray-300 hover:border-white/[0.14]"
+                }`}
+              >
+                <IconSettings className="h-3 w-3" />
+              </button>
+
+              {showSettings && (
+                <div className="absolute right-0 top-6 z-50 w-44 rounded-lg border border-white/[0.08] bg-[#0d0e15] shadow-xl p-3 text-[10px]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400 font-medium">Einstellungen</span>
+                    <button onClick={() => setShowSettings(false)} className="text-gray-600 hover:text-white">
+                      <IconX className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {/* MA toggles */}
+                  <p className="text-gray-600 mb-1 uppercase tracking-widest text-[8px]">Moving Averages</p>
+                  {MA_CONFIG.map(({ label, color }, i) => (
+                    <label key={label} className="flex items-center gap-2 py-0.5 cursor-pointer hover:text-white text-gray-400">
+                      <input
+                        type="checkbox"
+                        checked={visibleMAs[i]}
+                        onChange={() => setVisibleMAs(prev => prev.map((v, j) => j === i ? !v : v))}
+                        className="accent-cyan-500 h-2.5 w-2.5"
+                      />
+                      <span style={{ color }}>{label}</span>
+                    </label>
+                  ))}
+
+                  <div className="border-t border-white/[0.06] my-2" />
+
+                  {/* Volume toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-400">
+                    <input
+                      type="checkbox"
+                      checked={showVolume}
+                      onChange={() => setShowVolume(v => !v)}
+                      className="accent-cyan-500 h-2.5 w-2.5"
+                    />
+                    Volumen
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Replay toggle */}
             <button
               onClick={replay.toggle}
               title="Replay / Backtest"
@@ -134,6 +204,7 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
             >
               ⏮ Replay
             </button>
+
             {!replay.active && (
               <span className="flex items-center gap-1 text-[10px] text-gray-600">
                 <span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-500" : "bg-gray-600"}`} />
@@ -144,22 +215,43 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
         </div>
       )}
 
-      {/* Chart canvas */}
-      <div className="flex-1 min-h-0">
-        {candles.length > 0 ? (
-          <ChartCanvas candles={candles} userTrades={visibleTrades} onHover={setHoverCandle} />
-        ) : (
-          <div className="h-full flex items-center justify-center text-gray-600 text-xs">
-            Lade Marktdaten…
-          </div>
-        )}
+      {/* Toolbar + chart */}
+      <div className="flex-1 min-h-0 flex">
+        <ChartToolbar
+          activeTool={activeTool}
+          onToolChange={t => setActiveTool(t)}
+          chartType={chartType}
+          onTypeChange={t => setChartType(t)}
+          onClearAll={() => setDrawings([])}
+        />
+        <div className="flex-1 min-w-0">
+          {candles.length > 0 ? (
+            <ChartCanvas
+              candles={candles}
+              userTrades={visibleTrades}
+              onHover={setHoverCandle}
+              chartType={chartType}
+              visibleMAs={visibleMAs}
+              showVolume={showVolume}
+              activeTool={activeTool}
+              drawings={drawings}
+              onAddDrawing={d => {
+                setDrawings(prev => [...prev, d]);
+                setActiveTool("cursor"); // auto-return to cursor after drawing
+              }}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-600 text-xs">
+              Lade Marktdaten…
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Replay control bar — shown only when replay is active */}
+      {/* Replay bar */}
       {replay.active && (
         <ReplayBar replay={replay} current={candles.at(-1) ?? null} timeframe={timeframe} />
       )}
-
     </div>
   );
 }
