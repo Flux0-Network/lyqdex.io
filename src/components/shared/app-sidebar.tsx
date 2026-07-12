@@ -9,6 +9,7 @@ import { IconLayoutDashboard, IconChartCandle, IconWallet, IconLogin, IconLogout
 export const SIDEBAR_W = 36;
 
 type Active = "dashboard" | "trade" | "wallet";
+// Note: wallet is merged into the dashboard; "wallet" active still highlights Dashboard.
 
 function Nav({ href, title, active: on, children }: { href: string; title: string; active: boolean; children: React.ReactNode }) {
   return (
@@ -41,9 +42,8 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
         <Link href="/"><Image src="/lyqdex-icon.png" alt="LyqDex" width={26} height={26} /></Link>
       </div>
       <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center pt-2 gap-1">
-        <Nav href="/dashboard" title="Dashboard" active={active === "dashboard"}><IconLayoutDashboard className="h-3.5 w-3.5" /></Nav>
-        <Nav href="/trade"     title="Chart"     active={active === "trade"}><IconChartCandle className="h-3.5 w-3.5" /></Nav>
-        <Nav href="/wallet"    title="Wallet"    active={active === "wallet"}><IconWallet className="h-3.5 w-3.5" /></Nav>
+        <Nav href="/dashboard" title="Dashboard & Wallet" active={active === "dashboard" || active === "wallet"}><IconLayoutDashboard className="h-3.5 w-3.5" /></Nav>
+        <Nav href="/trade"     title="Chart"              active={active === "trade"}><IconChartCandle className="h-3.5 w-3.5" /></Nav>
       </div>
       <div className="w-full border-r border-white/[0.06] flex flex-col items-center pb-2.5">
         {walletAddr ? (
@@ -63,8 +63,8 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
                     <div className="text-[10px] text-gray-500 mb-0.5">Wallet</div>
                     <div className="text-[11px] text-white font-mono truncate">{walletAddr}</div>
                   </div>
-                  <Link href="/wallet" onClick={() => setMenuOpen(false)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-white/[0.04] transition">
-                    <IconWallet className="h-3.5 w-3.5" /> Wallet
+                  <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-white/[0.04] transition">
+                    <IconWallet className="h-3.5 w-3.5" /> Wallet & Dashboard
                   </Link>
                   <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-white/[0.04] transition">
                     <IconLogout className="h-3.5 w-3.5" /> Abmelden

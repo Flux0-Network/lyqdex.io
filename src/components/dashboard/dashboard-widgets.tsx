@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   IconStar, IconListDetails, IconChartLine, IconActivity,
   IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight,
@@ -30,7 +30,7 @@ export const SYMBOLS = [
 ];
 
 export const WIDGET_META: Record<WidgetType, { label: string; needsSymbol: boolean; defaultSize: 1 | 2 | 3 }> = {
-  portfolio: { label: "Portfolio",        needsSymbol: false, defaultSize: 1 },
+  portfolio: { label: "Wallet & Portfolio", needsSymbol: false, defaultSize: 2 },
   watchlist: { label: "Watchlist",        needsSymbol: false, defaultSize: 1 },
   movers:    { label: "Top Bewegungen",   needsSymbol: false, defaultSize: 1 },
   chart:     { label: "Mini-Chart",       needsSymbol: true,  defaultSize: 2 },
@@ -189,22 +189,42 @@ function TradesWidget({ market, symbol }: { market: MarketMap; symbol: string })
   );
 }
 
-function PortfolioWidget({ market }: { market: MarketMap }) {
-  const [wallets, setWallets] = useState<{ currency: string; balance: string }[] | null>(null);
-  const [authed, setAuthed] = useState<boolean | null>(null);
+interface WalletRow { id: string; currency: string; balance: string; }
 
-  useEffect(() => {
+function PortfolioWidget({ market }: { market: MarketMap }) {
+  const [wallets, setWallets] = useState<WalletRow[] | null>(null);
+  const [supported, setSupported] = useState<string[]>([]);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [creating, setCreating] = useState<string | null>(null);
+
+  const reload = useCallback(() => {
     fetch("/api/wallet")
       .then(r => { if (r.status === 401) { setAuthed(false); return null; } setAuthed(true); return r.json(); })
-      .then(d => d && setWallets(d.wallets ?? []))
+      .then(d => { if (d) { setWallets(d.wallets ?? []); setSupported(d.supported ?? []); } })
       .catch(() => setAuthed(false));
   }, []);
+  useEffect(() => { reload(); }, [reload]);
+
+  async function createWallet(cur: string) {
+    setCreating(cur);
+    try {
+      const res = await fetch("/api/wallet/create", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency: cur }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setWallets(prev => [...(prev ?? []), d.wallet].sort((a, b) => a.currency.localeCompare(b.currency)));
+        setShowAdd(false);
+      }
+    } finally { setCreating(null); }
+  }
 
   if (authed === false) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-4 gap-2">
         <IconWallet className="h-6 w-6 text-gray-600" />
-        <p className="text-[12px] text-gray-500">Melde dich an, um dein Portfolio zu sehen.</p>
+        <p className="text-[12px] text-gray-500">Melde dich an, um dein Wallet zu sehen.</p>
         <Link href="/login" className="text-[12px] text-violet-400 hover:text-violet-300">Anmelden →</Link>
       </div>
     );
@@ -213,20 +233,51 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
 
   const priceOf = (cur: string) => cur === "USDT" ? 1 : parseFloat(market[`${cur}USDT`]?.ticker?.price ?? "0");
   const total = wallets.reduce((s, w) => s + parseFloat(w.balance) * priceOf(w.currency), 0);
+  const available = supported.filter(c => !wallets.some(w => w.currency === c));
 
   return (
     <div>
-      <div className="mb-3">
-        <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
-        <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
+          <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
+        </div>
+        {available.length > 0 && (
+          <button
+            onClick={() => setShowAdd(o => !o)}
+            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition"
+          >
+            <IconWallet className="h-3 w-3" /> {showAdd ? "Schließen" : "Wallet +"}
+          </button>
+        )}
       </div>
+
+      {showAdd && (
+        <div className="grid grid-cols-4 gap-1.5 mb-3 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+          {available.map(cur => (
+            <button
+              key={cur}
+              onClick={() => createWallet(cur)}
+              disabled={!!creating}
+              className="flex flex-col items-center gap-1 py-2 rounded-md border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition disabled:opacity-40"
+            >
+              <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: colorOf(`${cur}USDT`) }}>{cur.slice(0, 2)}</span>
+              <span className="text-[10px] text-gray-300">{cur}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="divide-y divide-white/[0.04]">
-        {wallets.length === 0 && <div className="text-gray-600 text-xs py-2">Noch keine Wallets.</div>}
+        {wallets.length === 0 && <div className="text-gray-600 text-xs py-2">Noch keine Wallets vorhanden — oben rechts eins hinzufügen.</div>}
         {wallets.map(w => {
           const val = parseFloat(w.balance) * priceOf(w.currency);
           return (
-            <div key={w.currency} className="flex items-center justify-between py-1.5">
-              <span className="text-[12px] text-white font-medium">{w.currency}</span>
+            <div key={w.id} className="flex items-center justify-between py-1.5">
+              <span className="flex items-center gap-2">
+                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: colorOf(`${w.currency}USDT`) }}>{w.currency.slice(0, 2)}</span>
+                <span className="text-[12px] text-white font-medium">{w.currency}</span>
+              </span>
               <span className="text-right">
                 <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{parseFloat(w.balance).toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
                 <span className="text-[10px] text-gray-600 tabular-nums">${fmtPrice(val)}</span>
