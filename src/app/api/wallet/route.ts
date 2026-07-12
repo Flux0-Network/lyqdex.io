@@ -15,7 +15,7 @@ export async function GET() {
 
   const { data: wallets } = await supabase
     .from("wallets")
-    .select("id, currency, balance, created_at")
+    .select("id, currency, balance, demo_balance, created_at")
     .eq("user_id", session.id)
     .order("currency");
 

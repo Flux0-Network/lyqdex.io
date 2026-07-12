@@ -9,9 +9,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
   }
 
-  const { currency, amount, type } = await req.json();
+  const { currency, amount, type, mode } = await req.json();
   const cur = String(currency || "").toUpperCase();
   const amt = Number(amount);
+  const col = mode === "real" ? "balance" : "demo_balance"; // default demo
 
   if (type !== "deposit" && type !== "withdraw") {
     return NextResponse.json({ error: "Ungültiger Transaktionstyp." }, { status: 400 });
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   // Load the wallet
   const { data: rows } = await supabase
     .from("wallets")
-    .select("id, currency, balance")
+    .select("id, currency, balance, demo_balance")
     .eq("user_id", session.id)
     .eq("currency", cur);
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Wallet für diese Währung nicht gefunden." }, { status: 404 });
   }
 
-  const current = parseFloat(wallet.balance);
+  const current = parseFloat((wallet as Record<string, string>)[col] ?? "0");
   const next = type === "deposit" ? current + amt : current - amt;
 
   if (next < 0) {
@@ -44,10 +45,10 @@ export async function POST(req: NextRequest) {
 
   const { data: updated, error } = await supabase
     .from("wallets")
-    .update({ balance: next })
+    .update({ [col]: next })
     .eq("id", wallet.id)
     .eq("user_id", session.id)
-    .select("id, currency, balance, created_at")
+    .select("id, currency, balance, demo_balance, created_at")
     .single();
 
   if (error || !updated) {

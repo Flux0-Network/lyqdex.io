@@ -189,7 +189,8 @@ function TradesWidget({ market, symbol }: { market: MarketMap; symbol: string })
   );
 }
 
-interface WalletRow { id: string; currency: string; balance: string; }
+interface WalletRow { id: string; currency: string; balance: string; demo_balance?: string; }
+type AccountMode = "demo" | "real";
 
 function PortfolioWidget({ market }: { market: MarketMap }) {
   const [wallets, setWallets] = useState<WalletRow[] | null>(null);
@@ -201,6 +202,9 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [txError, setTxError] = useState("");
+  const [mode, setMode] = useState<AccountMode>("demo");
+
+  const balOf = (w: WalletRow) => parseFloat((mode === "real" ? w.balance : w.demo_balance ?? "0") || "0");
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
@@ -239,7 +243,7 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
     try {
       const res = await fetch("/api/wallet/transaction", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type }),
+        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type, mode }),
       });
       const d = await res.json();
       if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
@@ -263,14 +267,36 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   if (!wallets) return <div className="text-gray-600 text-xs py-6 text-center">Lade…</div>;
 
   const priceOf = (cur: string) => cur === "USDT" ? 1 : parseFloat(market[`${cur}USDT`]?.ticker?.price ?? "0");
-  const total = wallets.reduce((s, w) => s + parseFloat(w.balance) * priceOf(w.currency), 0);
+  const total = wallets.reduce((s, w) => s + balOf(w) * priceOf(w.currency), 0);
   const available = supported.filter(c => !wallets.some(w => w.currency === c));
 
   return (
     <div>
+      {/* Demo / Real switch */}
+      <div className="flex items-center gap-1 mb-3 p-0.5 rounded-lg bg-white/[0.04] w-max">
+        {(["demo", "real"] as AccountMode[]).map(m => (
+          <button
+            key={m}
+            onClick={() => { setMode(m); setAction(null); }}
+            className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition ${
+              mode === m
+                ? (m === "demo" ? "bg-amber-500/20 text-amber-300" : "bg-emerald-500/20 text-emerald-300")
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            {m === "demo" ? "Demo" : "Real"}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
+          <div className="text-[9px] uppercase tracking-widest text-gray-600 flex items-center gap-1">
+            Gesamtwert
+            <span className={`px-1 py-px rounded text-[8px] ${mode === "demo" ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+              {mode === "demo" ? "DEMO" : "REAL"}
+            </span>
+          </div>
           <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
         </div>
         {available.length > 0 && (
@@ -302,7 +328,8 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
       <div className="divide-y divide-white/[0.04]">
         {wallets.length === 0 && <div className="text-gray-600 text-xs py-2">Noch keine Wallets vorhanden — oben rechts eins hinzufügen.</div>}
         {wallets.map(w => {
-          const val = parseFloat(w.balance) * priceOf(w.currency);
+          const bal = balOf(w);
+          const val = bal * priceOf(w.currency);
           const open = action?.id === w.id;
           return (
             <div key={w.id} className="py-1.5">
@@ -313,7 +340,7 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="text-right">
-                    <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{parseFloat(w.balance).toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
+                    <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{bal.toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
                     <span className="text-[10px] text-gray-600 tabular-nums">${fmtPrice(val)}</span>
                   </span>
                   <span className="flex flex-col gap-0.5">
