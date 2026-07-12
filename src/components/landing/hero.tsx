@@ -169,10 +169,11 @@ function LivePrice() {
 }
 
 const PILLS = [
-  { label: "Non-custodial", dot: "bg-emerald-400" },
-  { label: "<1ms Latenz",   dot: "bg-cyan-400"    },
-  { label: "Replay-Modus",  dot: "bg-amber-400"   },
-  { label: "Beta · Kostenlos", dot: "bg-purple-400" },
+  { label: "Chart Replay",        dot: "bg-violet-400" },
+  { label: "Trade Analyse",       dot: "bg-cyan-400"   },
+  { label: "Bot Coding",          dot: "bg-amber-400"  },
+  { label: "Community Strategien",dot: "bg-emerald-400"},
+  { label: "Non-custodial",       dot: "bg-blue-400"   },
 ];
 
 export function Hero() {
@@ -194,16 +195,16 @@ export function Hero() {
 
             <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.06]">
-              <span className="text-black dark:text-white">Charts. Trades.</span>
+              <span className="text-black dark:text-white">Traden. Analysieren.</span>
               <br />
-              <span className="bg-gradient-to-r from-cyan-500 to-emerald-400 bg-clip-text text-transparent">
-                Eine Plattform.
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">
+                Automatisieren.
               </span>
             </motion.h1>
 
             <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
               className="mt-5 text-base text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
-              Echtzeit-Charts mit Indikatoren, Replay-Modus und unter 1ms Matching — alles non-custodial. Deine Keys, deine Coins.
+              Replay vergangene Märkte, analysiere deine Trades, code eigene Bots, erstelle Indikatoren und teile Strategien mit der Community — alles auf einer Plattform, non-custodial.
             </motion.p>
 
 
