@@ -6,7 +6,7 @@ import { ChartToolbar } from "./chart-toolbar";
 import { ReplayBar } from "./replay-bar";
 import { useMarketWS } from "@/hooks/use-market-ws";
 import { useReplay } from "@/hooks/use-replay";
-import { IconSettings, IconX, IconChevronUp, IconChevronDown } from "@tabler/icons-react";
+import { IconSettings, IconX } from "@tabler/icons-react";
 
 interface UserTrade { side: "buy" | "sell"; price: number; time: number; }
 
@@ -25,7 +25,6 @@ function calcMA(candles: Candle[], period: number) {
   return candles.slice(-period).reduce((s, c) => s + c.close, 0) / period;
 }
 
-type PosDrawing = Extract<Drawing, { type: "long" | "short" }>;
 
 export function ChartPanel({
   symbol = "BTCUSDT",
@@ -51,7 +50,6 @@ export function ChartPanel({
   const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
   const [chartBg,      setChartBg]      = useState("#0a0b10");
   const [showSettings, setShowSettings] = useState(false);
-  const [posPanel,     setPosPanel]     = useState(false);
   const settingsRef   = useRef<HTMLDivElement>(null);
   const canvasSaveRef = useRef<(() => void) | null>(null);
 
@@ -126,12 +124,6 @@ export function ChartPanel({
     () => MA_CONFIG.map(({ period, color, label }) => ({ label, color, value: calcMA(candles, period) })),
     [candles],
   );
-
-  const positions = useMemo<PosDrawing[]>(
-    () => drawings.filter((d): d is PosDrawing => d.type === "long" || d.type === "short"),
-    [drawings],
-  );
-  const currentPrice = candles.at(-1)?.close ?? 0;
 
   const display  = hoverCandle ?? candles.at(-1) ?? null;
   const delta    = display ? display.close - display.open : 0;
@@ -261,72 +253,6 @@ export function ChartPanel({
           </div>
         </div>
 
-        {/* Position panel pull-up */}
-        <div className="shrink-0">
-          <button
-            onClick={() => setPosPanel(p => !p)}
-            className="w-full flex items-center justify-center gap-1.5 py-0.5 border-t border-white/[0.06] bg-[#080910] hover:bg-white/[0.03] transition text-gray-600 hover:text-gray-400 text-[10px]"
-          >
-            {posPanel ? <IconChevronDown className="h-3 w-3" /> : <IconChevronUp className="h-3 w-3" />}
-            Positionen {positions.length > 0 && `(${positions.length})`}
-          </button>
-
-          {posPanel && (
-            <div className="border-t border-white/[0.06] bg-[#08090f] max-h-40 overflow-y-auto">
-              {positions.length === 0 ? (
-                <div className="text-center text-gray-600 text-[10px] py-4">Keine offenen Positionen</div>
-              ) : (
-                <table className="w-full text-[10px]">
-                  <thead>
-                    <tr className="text-gray-600 border-b border-white/[0.04]">
-                      <th className="text-left px-3 py-1 font-normal">Typ</th>
-                      <th className="text-right px-2 py-1 font-normal">Entry</th>
-                      <th className="text-right px-2 py-1 font-normal">Target</th>
-                      <th className="text-right px-2 py-1 font-normal">Stop</th>
-                      <th className="text-right px-2 py-1 font-normal">R:R</th>
-                      <th className="text-right px-2 py-1 font-normal">P&amp;L</th>
-                      <th className="px-2 py-1" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map(pos => {
-                      const isLong = pos.type === "long";
-                      const risk   = Math.abs(pos.entry - pos.stop);
-                      const reward = Math.abs(pos.entry - pos.target);
-                      const rr     = risk > 0 ? (reward / risk).toFixed(2) : "—";
-                      const pnlPct = currentPrice > 0
-                        ? ((currentPrice - pos.entry) / pos.entry * 100 * (isLong ? 1 : -1))
-                        : 0;
-                      return (
-                        <tr key={pos.id} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
-                          <td className={`px-3 py-1 font-semibold ${isLong ? "text-emerald-400" : "text-red-400"}`}>
-                            {isLong ? "LONG" : "SHORT"}
-                          </td>
-                          <td className="text-right px-2 py-1 text-white tabular-nums">{fmt(pos.entry)}</td>
-                          <td className="text-right px-2 py-1 text-emerald-400 tabular-nums">{fmt(pos.target)}</td>
-                          <td className="text-right px-2 py-1 text-red-400 tabular-nums">{fmt(pos.stop)}</td>
-                          <td className="text-right px-2 py-1 text-gray-400 tabular-nums">{rr}</td>
-                          <td className={`text-right px-2 py-1 tabular-nums font-medium ${pnlPct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
-                          </td>
-                          <td className="px-2 py-1">
-                            <button
-                              onClick={() => setDrawings(prev => prev.filter(d => d.id !== pos.id))}
-                              className="text-gray-600 hover:text-red-400 transition"
-                              title="Position entfernen"
-                            >
-                              <IconX className="h-2.5 w-2.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       {replay.active && (
