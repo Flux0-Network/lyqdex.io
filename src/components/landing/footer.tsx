@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="bg-gray-50 dark:bg-transparent border-t border-black/[0.06] dark:border-white/[0.05] py-12 px-6">
+    <footer className="bg-transparent border-t border-white/[0.05] py-12 px-6">
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-4">
@@ -15,7 +15,7 @@ export function Footer() {
           </p>
         </div>
         <div>
-          <h4 className="font-semibold text-black dark:text-white mb-3">Produkt</h4>
+          <h4 className="font-semibold text-white mb-3">Produkt</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="/trade" className="hover:text-white transition">Trading Terminal</Link></li>
             <li><Link href="/register" className="hover:text-white transition">Registrieren</Link></li>
@@ -23,7 +23,7 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-black dark:text-white mb-3">Ressourcen</h4>
+          <h4 className="font-semibold text-white mb-3">Ressourcen</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-white transition">Dokumentation</Link></li>
             <li><Link href="#" className="hover:text-white transition">API</Link></li>
@@ -31,7 +31,7 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-black dark:text-white mb-3">Rechtliches</h4>
+          <h4 className="font-semibold text-white mb-3">Rechtliches</h4>
           <ul className="space-y-2 text-gray-500">
             <li><Link href="#" className="hover:text-white transition">AGB</Link></li>
             <li><Link href="#" className="hover:text-white transition">Datenschutz</Link></li>
