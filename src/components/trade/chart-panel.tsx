@@ -98,13 +98,13 @@ export function ChartPanel({
     if (!liveCandle || !history.length) return history;
     const last = history[history.length - 1];
     if (last.time === liveCandle.time) return [...history.slice(0, -1), liveCandle];
-    return [...history, liveCandle].slice(-500);
+    return [...history, liveCandle].slice(-1500);
   }, [history, liveCandle, replay.active, replay.cursor]);
 
   useEffect(() => {
     if (replay.active || !liveCandle || !history.length) return;
     const last = history[history.length - 1];
-    if (liveCandle.time > last.time) setHistory(prev => [...prev, liveCandle].slice(-500));
+    if (liveCandle.time > last.time) setHistory(prev => [...prev, liveCandle].slice(-1500));
   }, [liveCandle, history, replay.active]);
 
   useEffect(() => {

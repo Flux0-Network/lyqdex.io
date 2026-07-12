@@ -97,9 +97,10 @@ export function ChartCanvas({
   const [crosshair,   setCrosshair]   = useState<{ x: number; y: number } | null>(null);
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
   const [yZoom,       setYZoom]       = useState(1.0);
+  const [yOffset,     setYOffset]     = useState(0);
   const [logScale,    setLogScale]    = useState(false);
 
-  const dragRef     = useRef<{ startX: number; startOffset: number } | null>(null);
+  const dragRef     = useRef<{ startX: number; startOffset: number; startY: number; startYOffset: number } | null>(null);
   const yDragRef    = useRef<{ startY: number; startZoom: number } | null>(null);
   const xDragRef    = useRef<{ startX: number; startCW: number; startOffset: number } | null>(null);
   const velRef      = useRef(0);
@@ -107,6 +108,8 @@ export function ChartCanvas({
   const lastMXRef   = useRef<{ x: number; t: number } | null>(null);
   const offsetRef   = useRef(offset);
   useEffect(() => { offsetRef.current = offset; }, [offset]);
+  const yOffsetRef  = useRef(yOffset);
+  useEffect(() => { yOffsetRef.current = yOffset; }, [yOffset]);
 
   const drawStartRef = useRef<{ point: DrawingPoint } | null>(null);
   const drawDragRef  = useRef<{
@@ -151,18 +154,19 @@ export function ChartCanvas({
 
     const pY = (price: number) => {
       if (logScale) {
-        return PAD.top + priceH * (1 - (Math.log(Math.max(price, 1e-10)) - logLo) / logRange);
+        return PAD.top + priceH * (1 - (Math.log(Math.max(price, 1e-10)) - logLo) / logRange) + yOffset;
       }
-      return PAD.top + priceH - ((price - lo) / priceRange) * priceH;
+      return PAD.top + priceH - ((price - lo) / priceRange) * priceH + yOffset;
     };
     const cX = (idx: number) => PAD.left + chartW - rp - (rmi - idx) * cw;
     const vY = (vol: number) => H - PAD.bottom - (vol / maxVol) * volH;
     const xyToPoint = (x: number, y: number): DrawingPoint => {
+      const yy = y - yOffset;
       let price: number;
       if (logScale) {
-        price = Math.exp(logLo + logRange * (1 - (y - PAD.top) / priceH));
+        price = Math.exp(logLo + logRange * (1 - (yy - PAD.top) / priceH));
       } else {
-        price = hi - ((y - PAD.top) / priceH) * priceRange;
+        price = hi - ((yy - PAD.top) / priceH) * priceRange;
       }
       const idx = Math.max(0, Math.min(candles.length - 1, Math.round(rmi - (PAD.left + chartW - rp - x) / cw)));
       return { time: candles[idx]?.time ?? 0, price };
@@ -194,9 +198,13 @@ export function ChartCanvas({
   }
 
   // ── Hit-test helpers
-  function hitTestPos(d: Drawing & { type:"long"|"short"; entry:number; target:number; stop:number }, my: number, H: number) {
-    const { pY } = getCoords(containerRef.current?.clientWidth ?? 0, H);
+  function hitTestPos(d: Drawing & { type:"long"|"short"; entry:number; target:number; stop:number }, mx: number, my: number, W: number, H: number) {
+    const { pY, pointToX } = getCoords(W, H);
     const THR = 8;
+    // Only hit within the position's horizontal extent (start → right edge)
+    const sx = Math.max(PAD.left, pointToX({ time: d.startTime, price: d.entry }));
+    const ex = W - PAD.right;
+    if (mx < sx - THR || mx > ex + THR) return null;
     if (Math.abs(pY(d.entry)  - my) < THR) return "entry"  as const;
     if (Math.abs(pY(d.target) - my) < THR) return "target" as const;
     if (Math.abs(pY(d.stop)   - my) < THR) return "stop"   as const;
@@ -433,10 +441,11 @@ export function ChartCanvas({
       ctx.beginPath();ctx.moveTo(PAD.left,crosshair.y);ctx.lineTo(W-PAD.right,crosshair.y);ctx.stroke();
       ctx.setLineDash([]);
       let hp: number;
+      const chY = crosshair.y - yOffset;
       if (logScale) {
-        hp = Math.exp(logLo + logRange * (1 - (crosshair.y - PAD.top) / priceH));
+        hp = Math.exp(logLo + logRange * (1 - (chY - PAD.top) / priceH));
       } else {
-        hp = hi - ((crosshair.y - PAD.top) / priceH) * priceRange;
+        hp = hi - ((chY - PAD.top) / priceH) * priceRange;
       }
       if (crosshair.y>=PAD.top&&crosshair.y<=PAD.top+priceH) {
         ctx.fillStyle="#374151";ctx.fillRect(W-PAD.right,crosshair.y-9,PAD.right-2,18);
@@ -445,7 +454,7 @@ export function ChartCanvas({
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candles, candleWidth, offset, yZoom, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode, chartBg]);
+  }, [candles, candleWidth, offset, yZoom, yOffset, logScale, crosshair, maData, userTrades, chartType, visibleMAs, showVolume, volRatio, candleColors, drawings, activeTool, selectedId, magnetMode, chartBg]);
 
   useEffect(() => { draw(); }, [draw]);
 
@@ -476,7 +485,7 @@ export function ChartCanvas({
       if(animRef.current){cancelAnimationFrame(animRef.current);animRef.current=null;}
       if (e.touches.length===1) {
         t2=null;
-        dragRef.current={startX:e.touches[0].clientX,startOffset:offsetRef.current};
+        dragRef.current={startX:e.touches[0].clientX,startOffset:offsetRef.current,startY:e.touches[0].clientY,startYOffset:yOffsetRef.current};
         velRef.current=0;lastMXRef.current={x:e.touches[0].clientX,t:performance.now()};
       } else if (e.touches.length===2) {
         dragRef.current=null;
@@ -491,8 +500,10 @@ export function ChartCanvas({
       e.preventDefault();
       if (e.touches.length===1&&dragRef.current) {
         const dx=e.touches[0].clientX-dragRef.current.startX;
+        const dy=e.touches[0].clientY-dragRef.current.startY;
         const now=performance.now();
         setOffset(dragRef.current.startOffset+dx);
+        setYOffset(dragRef.current.startYOffset+dy);
         if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.touches[0].clientX-lastMXRef.current.x)/dt*16;}
         lastMXRef.current={x:e.touches[0].clientX,t:performance.now()};
       } else if (e.touches.length===2&&t2) {
@@ -556,7 +567,7 @@ export function ChartCanvas({
 
   function onDblClick(e:React.MouseEvent) {
     const rect=containerRef.current?.getBoundingClientRect();if(!rect)return;
-    if(e.clientX-rect.left>rect.width-PAD.right)setYZoom(1.0);
+    if(e.clientX-rect.left>rect.width-PAD.right){setYZoom(1.0);setYOffset(0);}
   }
 
   function onMouseDown(e:React.MouseEvent) {
@@ -585,14 +596,14 @@ export function ChartCanvas({
       const d=drawings[i];
       const{xyToPoint}=getCoords(W,H);
       if(d.type==="long"||d.type==="short"){
-        const handle=hitTestPos(d,my,H);
+        const handle=hitTestPos(d,mx,my,W,H);
         if(handle){setSelectedId(d.id);drawDragRef.current={id:d.id,handle,startPrice:xyToPoint(mx,my).price,startDrawing:d};return;}
       } else if(hitTestOther(d,mx,my,W,H)){
         setSelectedId(d.id);drawDragRef.current={id:d.id,handle:"whole",startPrice:xyToPoint(mx,my).price,startDrawing:d};return;
       }
     }
     setSelectedId(null);
-    dragRef.current={startX:e.clientX,startOffset:offset};
+    dragRef.current={startX:e.clientX,startOffset:offset,startY:e.clientY,startYOffset:yOffset};
     velRef.current=0;lastMXRef.current={x:e.clientX,t:performance.now()};
   }
 
@@ -634,10 +645,11 @@ export function ChartCanvas({
       }
       onUpdateDrawing?.(moved);return;
     }
-    // Pan
+    // Pan (free 2D: horizontal offset + vertical yOffset)
     if(dragRef.current){
-      const dx=e.clientX-dragRef.current.startX,now=performance.now();
+      const dx=e.clientX-dragRef.current.startX,dy=e.clientY-dragRef.current.startY,now=performance.now();
       setOffset(dragRef.current.startOffset+dx);
+      setYOffset(dragRef.current.startYOffset+dy);
       if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.clientX-lastMXRef.current.x)/dt*16;}
       lastMXRef.current={x:e.clientX,t:performance.now()};
     }
@@ -686,7 +698,7 @@ export function ChartCanvas({
       {/* Price axis scale buttons — A and L side by side */}
       <div className="absolute flex flex-row gap-0.5 z-10 pointer-events-auto" style={{ right: 4, bottom: 34 }}>
         <button
-          onClick={() => setYZoom(1)}
+          onClick={() => { setYZoom(1); setYOffset(0); }}
           title="Auto Scale"
           className="w-5 h-4 text-[9px] font-bold rounded border border-white/10 text-gray-500 hover:text-white hover:bg-white/10 transition leading-none"
         >
