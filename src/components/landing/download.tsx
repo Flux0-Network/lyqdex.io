@@ -86,12 +86,6 @@ export function Download() {
           >
             Jetzt kostenlos starten
           </Link>
-          <Link
-            href="/trade"
-            className="px-8 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.07] dark:hover:bg-white/[0.08] text-gray-700 dark:text-gray-300 font-semibold text-sm transition"
-          >
-            Live Demo ansehen →
-          </Link>
         </motion.div>
       </div>
     </section>
