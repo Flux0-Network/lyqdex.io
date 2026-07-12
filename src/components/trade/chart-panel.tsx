@@ -28,10 +28,12 @@ function calcMA(candles: Candle[], period: number) {
 type PosDrawing = Extract<Drawing, { type: "long" | "short" }>;
 
 export function ChartPanel({
+  symbol = "BTCUSDT",
   timeframe = "1H",
   onReplayChange,
   saveRef,
 }: {
+  symbol?:          string;
   timeframe?:       string;
   onReplayChange?:  (active: boolean, toggle: () => void) => void;
   saveRef?:         React.MutableRefObject<(() => void) | null>;
@@ -40,7 +42,6 @@ export function ChartPanel({
   const [hoverCandle,  setHoverCandle]  = useState<Candle | null>(null);
   const [userTrades,   setUserTrades]   = useState<UserTrade[]>([]);
 
-  // Chart settings
   const [activeTool,   setActiveTool]   = useState<DrawingTool>("cursor");
   const [drawings,     setDrawings]     = useState<Drawing[]>([]);
   const [chartType,    setChartType]    = useState<ChartType>("candle");
@@ -50,39 +51,38 @@ export function ChartPanel({
   const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
   const [showSettings, setShowSettings] = useState(false);
   const [posPanel,     setPosPanel]     = useState(false);
-  const settingsRef = useRef<HTMLDivElement>(null);
+  const settingsRef   = useRef<HTMLDivElement>(null);
   const canvasSaveRef = useRef<(() => void) | null>(null);
 
-  const { candle: liveCandle, source: wsSource, connected } = useMarketWS("BTCUSDT", timeframe);
+  const { candle: liveCandle, source: wsSource, connected } = useMarketWS(symbol, timeframe);
   const replay = useReplay(history);
 
-  // Expose save function upward
   useEffect(() => {
     if (!saveRef) return;
     saveRef.current = () => canvasSaveRef.current?.();
   }, [saveRef]);
 
-  // Expose replay controls upward
   useEffect(() => {
     onReplayChange?.(replay.active, replay.toggle);
   }, [replay.active, replay.toggle, onReplayChange]);
 
+  // Reset history when symbol or timeframe changes
   useEffect(() => {
+    setHistory([]);
     let cancelled = false;
     const interval = TF_INTERVAL[timeframe] ?? "1h";
-    fetch(`/api/market?symbol=BTCUSDT&interval=${interval}`)
+    fetch(`/api/market?symbol=${symbol}&interval=${interval}`)
       .then(r => r.json())
       .then(d => { if (!cancelled && d.candles) setHistory(d.candles); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [timeframe]);
+  }, [symbol, timeframe]);
 
   useEffect(() => {
     if (replay.active) replay.toggle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeframe]);
+  }, [timeframe, symbol]);
 
-  // Close settings on outside click
   useEffect(() => {
     if (!showSettings) return;
     function handler(e: MouseEvent) {
@@ -126,7 +126,6 @@ export function ChartPanel({
     [candles],
   );
 
-  // Positions for the bottom panel
   const positions = useMemo<PosDrawing[]>(
     () => drawings.filter((d): d is PosDrawing => d.type === "long" || d.type === "short"),
     [drawings],
@@ -162,7 +161,6 @@ export function ChartPanel({
           </span>
 
           <span className="ml-auto flex items-center gap-2 relative">
-            {/* Settings gear */}
             <div ref={settingsRef} className="relative">
               <button
                 onClick={() => setShowSettings(s => !s)}
@@ -178,8 +176,6 @@ export function ChartPanel({
                     <span className="text-gray-400 font-medium">Einstellungen</span>
                     <button onClick={() => setShowSettings(false)} className="text-gray-600 hover:text-white"><IconX className="h-3 w-3" /></button>
                   </div>
-
-                  {/* MA toggles */}
                   <p className="text-gray-600 mb-1 uppercase tracking-widest text-[8px]">Moving Averages</p>
                   {MA_CONFIG.map(({ label, color }, i) => (
                     <label key={label} className="flex items-center gap-2 py-0.5 cursor-pointer hover:text-white text-gray-400">
@@ -187,36 +183,20 @@ export function ChartPanel({
                       <span style={{ color }}>{label}</span>
                     </label>
                   ))}
-
                   <div className="border-t border-white/[0.06] my-2" />
-
-                  {/* Volume toggle */}
                   <label className="flex items-center gap-2 mb-2 cursor-pointer hover:text-white text-gray-400">
                     <input type="checkbox" checked={showVolume} onChange={() => setShowVolume(v => !v)} className="accent-cyan-500 h-2.5 w-2.5" />
                     Volumen
                   </label>
-
                   <div className="border-t border-white/[0.06] my-2" />
-
-                  {/* Candle colors */}
                   <p className="text-gray-600 mb-1.5 uppercase tracking-widest text-[8px]">Kerzen-Farben</p>
                   <div className="flex items-center gap-3">
                     <label className="flex items-center gap-1.5 cursor-pointer text-emerald-400">
-                      <input
-                        type="color"
-                        value={candleColors.up}
-                        onChange={e => setCandleColors(c => ({ ...c, up: e.target.value }))}
-                        className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0"
-                      />
+                      <input type="color" value={candleColors.up} onChange={e => setCandleColors(c => ({ ...c, up: e.target.value }))} className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0" />
                       Long
                     </label>
                     <label className="flex items-center gap-1.5 cursor-pointer text-red-400">
-                      <input
-                        type="color"
-                        value={candleColors.down}
-                        onChange={e => setCandleColors(c => ({ ...c, down: e.target.value }))}
-                        className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0"
-                      />
+                      <input type="color" value={candleColors.down} onChange={e => setCandleColors(c => ({ ...c, down: e.target.value }))} className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0" />
                       Short
                     </label>
                   </div>
@@ -259,13 +239,11 @@ export function ChartPanel({
                 magnetMode={magnetMode}
                 activeTool={activeTool}
                 drawings={drawings}
-                onAddDrawing={d => {
-                  setDrawings(prev => [...prev, d]);
-                  setActiveTool("cursor");
-                }}
+                onAddDrawing={d => { setDrawings(prev => [...prev, d]); setActiveTool("cursor"); }}
                 onUpdateDrawing={d => setDrawings(prev => prev.map(x => x.id === d.id ? d : x))}
                 onDeleteDrawing={id => setDrawings(prev => prev.filter(x => x.id !== id))}
                 saveRef={canvasSaveRef}
+                symbol={symbol}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-gray-600 text-xs">
@@ -277,7 +255,6 @@ export function ChartPanel({
 
         {/* Position panel pull-up */}
         <div className="shrink-0">
-          {/* Handle bar */}
           <button
             onClick={() => setPosPanel(p => !p)}
             className="w-full flex items-center justify-center gap-1.5 py-0.5 border-t border-white/[0.06] bg-[#080910] hover:bg-white/[0.03] transition text-gray-600 hover:text-gray-400 text-[10px]"

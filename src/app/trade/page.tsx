@@ -11,6 +11,7 @@ import { IconLogin, IconLayoutDashboard } from "@tabler/icons-react";
 const SIDEBAR_W = 36;
 
 export default function TradePage() {
+  const [symbol,       setSymbol]       = useState("BTCUSDT");
   const [timeframe,    setTimeframe]    = useState("1H");
   const [walletAddr,   setWalletAddr]   = useState<string | null>(null);
   const [replayActive, setReplayActive] = useState(false);
@@ -80,6 +81,8 @@ export default function TradePage() {
       {/* Navbar */}
       <AppNavbar
         sidebarWidth={SIDEBAR_W}
+        symbol={symbol}
+        onSymbol={setSymbol}
         timeframe={timeframe}
         onTimeframe={setTimeframe}
         replayActive={replayActive}
@@ -91,6 +94,7 @@ export default function TradePage() {
       <div className="absolute top-11 bottom-0 right-0 flex" style={{ left: SIDEBAR_W }}>
         <div className="flex-1 min-w-0 border-r border-white/5">
           <ChartPanel
+            symbol={symbol}
             timeframe={timeframe}
             onReplayChange={handleReplayChange}
             saveRef={saveChartRef}

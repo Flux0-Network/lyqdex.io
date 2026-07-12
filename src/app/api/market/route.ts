@@ -19,6 +19,8 @@ const TF_OKX: Record<string, string> = {
 
 const COIN_IDS: Record<string, string> = {
   BTCUSDT: "bitcoin", ETHUSDT: "ethereum", SOLUSDT: "solana",
+  BNBUSDT: "binancecoin", XRPUSDT: "ripple", DOGEUSDT: "dogecoin",
+  ADAUSDT: "cardano", AVAXUSDT: "avalanche-2",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────
