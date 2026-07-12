@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { HeroBg } from "./hero-bg";
 
 const CANDLES = [
   [0,   68,  80,  40,  55],
@@ -178,7 +179,8 @@ const PILLS = [
 
 export function Hero() {
   return (
-    <section className="min-h-screen bg-white dark:bg-[#080910] overflow-hidden relative flex items-center">
+    <section className="min-h-screen bg-[#06070f] overflow-hidden relative flex items-center">
+      <HeroBg />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-24 pb-14">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -187,7 +189,7 @@ export function Hero() {
           <div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
               className="mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs text-gray-500 dark:text-gray-400 font-medium">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.05] text-xs text-gray-400 font-medium backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Beta · Jetzt kostenlos starten
               </div>
@@ -195,7 +197,7 @@ export function Hero() {
 
             <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.06]">
-              <span className="text-black dark:text-white">Traden. Analysieren.</span>
+              <span className="text-white">Traden. Analysieren.</span>
               <br />
               <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">
                 Automatisieren.
@@ -203,7 +205,7 @@ export function Hero() {
             </motion.h1>
 
             <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-5 text-base text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
+              className="mt-5 text-base text-gray-400 max-w-md leading-relaxed">
               Replay vergangene Märkte, analysiere deine Trades, code eigene Bots, erstelle Indikatoren und teile Strategien mit der Community — alles auf einer Plattform, non-custodial.
             </motion.p>
 
@@ -211,7 +213,7 @@ export function Hero() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.25 }}
               className="mt-8 flex flex-wrap gap-2">
               {PILLS.map(({ label, dot }) => (
-                <div key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.07] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] text-xs text-gray-600 dark:text-gray-400">
+                <div key={label} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-xs text-gray-400 backdrop-blur-sm">
                   <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
                   {label}
                 </div>
