@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+/* Animated aurora ribbon via canvas */
 function AuroraCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -16,76 +17,54 @@ function AuroraCanvas() {
 
     function resize() {
       if (!canvas) return;
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx!.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
     resize();
     window.addEventListener("resize", resize);
 
     const STRANDS = [
-      { r: 139, g: 92,  b: 246, speed: 0.6, amp: 160, freq: 1.1, phase: 0,   width: 120 },
-      { r: 6,   g: 182, b: 212, speed: 0.4, amp: 120, freq: 0.8, phase: 2.1, width: 90  },
-      { r: 168, g: 85,  b: 247, speed: 0.8, amp: 200, freq: 1.4, phase: 4.2, width: 100 },
-      { r: 59,  g: 130, b: 246, speed: 0.5, amp: 140, freq: 1.0, phase: 1.0, width: 80  },
-      { r: 236, g: 72,  b: 153, speed: 0.7, amp: 110, freq: 0.7, phase: 3.0, width: 70  },
+      { color: "#7c3aed", alpha: 0.35, speed: 0.0008, amp: 180, freq: 1.2, phase: 0 },
+      { color: "#06b6d4", alpha: 0.25, speed: 0.0006, amp: 140, freq: 0.9, phase: 2 },
+      { color: "#a855f7", alpha: 0.20, speed: 0.0010, amp: 220, freq: 1.5, phase: 4 },
+      { color: "#3b82f6", alpha: 0.18, speed: 0.0007, amp: 160, freq: 1.1, phase: 1 },
+      { color: "#ec4899", alpha: 0.15, speed: 0.0009, amp: 130, freq: 0.8, phase: 3 },
     ];
 
     function draw() {
       if (!canvas || !ctx) return;
-      const W = canvas.width;
-      const H = canvas.height;
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
       ctx.clearRect(0, 0, W, H);
 
-      const sec = t * 0.001;
-
-      STRANDS.forEach((s) => {
+      STRANDS.forEach((s, si) => {
         const pts: [number, number][] = [];
-        const steps = 60;
+        const steps = 80;
         for (let i = 0; i <= steps; i++) {
           const x = (W / steps) * i;
           const y =
-            H * 0.5 +
-            Math.sin((i / steps) * Math.PI * s.freq * 2 + sec * s.speed + s.phase) * s.amp +
-            Math.sin((i / steps) * Math.PI * 3.7 + sec * s.speed * 1.3 + s.phase) * (s.amp * 0.25);
+            H * 0.45 +
+            Math.sin((x / W) * Math.PI * s.freq * 2 + t * s.speed * 1000 + s.phase) * s.amp +
+            Math.sin((x / W) * Math.PI * 3 + t * s.speed * 800 + si) * (s.amp * 0.3);
           pts.push([x, y]);
         }
 
-        // outer glow
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          const mx = (pts[i - 1][0] + pts[i][0]) / 2;
-          const my = (pts[i - 1][1] + pts[i][1]) / 2;
-          ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
+        // draw thick blurry stroke
+        for (let width = 60; width >= 2; width -= 4) {
+          ctx.beginPath();
+          ctx.moveTo(pts[0][0], pts[0][1]);
+          for (let i = 1; i < pts.length; i++) {
+            const mx = (pts[i - 1][0] + pts[i][0]) / 2;
+            const my = (pts[i - 1][1] + pts[i][1]) / 2;
+            ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
+          }
+          const a = s.alpha * (1 - width / 60) * 0.6;
+          ctx.strokeStyle = s.color + Math.round(a * 255).toString(16).padStart(2, "0");
+          ctx.lineWidth = width;
+          ctx.lineCap = "round";
+          ctx.stroke();
         }
-        ctx.strokeStyle = `rgba(${s.r},${s.g},${s.b},0.08)`;
-        ctx.lineWidth = s.width * 3;
-        ctx.lineCap = "round";
-        ctx.stroke();
-
-        // mid
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          const mx = (pts[i - 1][0] + pts[i][0]) / 2;
-          const my = (pts[i - 1][1] + pts[i][1]) / 2;
-          ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
-        }
-        ctx.strokeStyle = `rgba(${s.r},${s.g},${s.b},0.18)`;
-        ctx.lineWidth = s.width;
-        ctx.stroke();
-
-        // bright core
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          const mx = (pts[i - 1][0] + pts[i][0]) / 2;
-          const my = (pts[i - 1][1] + pts[i][1]) / 2;
-          ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
-        }
-        ctx.strokeStyle = `rgba(${s.r},${s.g},${s.b},0.55)`;
-        ctx.lineWidth = 3;
-        ctx.stroke();
       });
 
       t += 16;
@@ -99,28 +78,27 @@ function AuroraCanvas() {
     };
   }, []);
 
-  return <canvas ref={ref} className="absolute inset-0 w-full h-full" />;
+  return (
+    <canvas
+      ref={ref}
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity: 0.9 }}
+    />
+  );
 }
 
+/* Static star field */
 function Stars() {
-  const STARS = Array.from({ length: 100 }, (_, i) => ({
-    x: (i * 137.508) % 100,
-    y: (i * 97.3) % 100,
-    r: i % 6 === 0 ? 1.8 : i % 3 === 0 ? 1.2 : 0.7,
-    delay: (i % 5) * 0.8,
-    dur: 2 + (i % 4),
+  const STARS = Array.from({ length: 80 }, (_, i) => ({
+    x: ((i * 137.508) % 100),
+    y: ((i * 97.3) % 100),
+    r: i % 5 === 0 ? 1.5 : 0.8,
+    o: 0.2 + (i % 7) * 0.1,
+    d: 2 + (i % 4),
   }));
 
   return (
     <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <style>{`
-          @keyframes twinkle {
-            0%, 100% { opacity: 0.15; }
-            50% { opacity: 0.8; }
-          }
-        `}</style>
-      </defs>
       {STARS.map((s, i) => (
         <circle
           key={i}
@@ -128,90 +106,84 @@ function Stars() {
           cy={`${s.y}%`}
           r={s.r}
           fill="white"
-          style={{ animation: `twinkle ${s.dur}s ${s.delay}s ease-in-out infinite` }}
+          opacity={s.o}
+          style={{ animation: `pulse ${s.d}s ease-in-out infinite alternate` }}
         />
       ))}
+      <style>{`@keyframes pulse { from { opacity: 0.1; } to { opacity: 0.6; } }`}</style>
     </svg>
   );
 }
 
+/* Glowing orbs */
 function Orbs() {
   return (
-    <>
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Top-right large orb */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 600, height: 600,
+          top: -200, right: -100,
+          background: "radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)",
+          animation: "orbFloat 8s ease-in-out infinite alternate",
+        }}
+      />
+      {/* Center orb */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 400, height: 400,
+          top: "30%", left: "40%",
+          background: "radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)",
+          animation: "orbFloat 11s ease-in-out infinite alternate-reverse",
+        }}
+      />
+      {/* Bottom-left orb */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 500, height: 500,
+          bottom: -150, left: -100,
+          background: "radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 70%)",
+          animation: "orbFloat 9s ease-in-out infinite alternate",
+        }}
+      />
       <style>{`
-        @keyframes float1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,40px) scale(1.1)} }
-        @keyframes float2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-20px,30px) scale(1.05)} }
-        @keyframes float3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,-30px) scale(1.08)} }
+        @keyframes orbFloat {
+          from { transform: translateY(0px) scale(1); }
+          to   { transform: translateY(40px) scale(1.08); }
+        }
       `}</style>
-
-      {/* Top-right violet */}
-      <div style={{
-        position:"absolute", width:700, height:700,
-        top:-250, right:-150,
-        borderRadius:"50%",
-        background:"radial-gradient(circle, rgba(124,58,237,0.45) 0%, rgba(124,58,237,0.1) 45%, transparent 70%)",
-        animation:"float1 10s ease-in-out infinite",
-        filter:"blur(20px)",
-      }} />
-
-      {/* Center cyan */}
-      <div style={{
-        position:"absolute", width:500, height:500,
-        top:"20%", left:"35%",
-        borderRadius:"50%",
-        background:"radial-gradient(circle, rgba(6,182,212,0.30) 0%, rgba(6,182,212,0.08) 45%, transparent 70%)",
-        animation:"float2 13s ease-in-out infinite",
-        filter:"blur(25px)",
-      }} />
-
-      {/* Bottom-left pink/purple */}
-      <div style={{
-        position:"absolute", width:600, height:600,
-        bottom:-200, left:-150,
-        borderRadius:"50%",
-        background:"radial-gradient(circle, rgba(168,85,247,0.38) 0%, rgba(168,85,247,0.08) 45%, transparent 70%)",
-        animation:"float3 11s ease-in-out infinite",
-        filter:"blur(20px)",
-      }} />
-
-      {/* Small accent top-left */}
-      <div style={{
-        position:"absolute", width:300, height:300,
-        top:"10%", left:"10%",
-        borderRadius:"50%",
-        background:"radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%)",
-        animation:"float2 8s ease-in-out infinite",
-        filter:"blur(15px)",
-      }} />
-    </>
+    </div>
   );
 }
 
+/* Grid overlay */
 function Grid() {
   return (
-    <div style={{
-      position:"absolute", inset:0,
-      backgroundImage:`
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
-      `,
-      backgroundSize:"60px 60px",
-    }} />
+    <div
+      className="absolute inset-0 opacity-[0.04]"
+      style={{
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)
+        `,
+        backgroundSize: "60px 60px",
+      }}
+    />
   );
 }
 
 export function HeroBg() {
   return (
-    <div style={{ position:"absolute", inset:0, background:"#06070f", overflow:"hidden" }}>
+    <div className="absolute inset-0 bg-[#06070f] overflow-hidden">
       <Stars />
       <Orbs />
-      <Grid />
       <AuroraCanvas />
+      <Grid />
       {/* bottom fade */}
-      <div style={{
-        position:"absolute", bottom:0, left:0, right:0, height:200,
-        background:"linear-gradient(to top, #06070f, transparent)",
-      }} />
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#06070f] to-transparent" />
     </div>
   );
 }
