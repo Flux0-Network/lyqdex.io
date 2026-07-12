@@ -85,12 +85,12 @@ export function Security() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.07, duration: 0.4 }}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition"
+              className="rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition"
             >
               <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl ${item.bg} mb-4`}>
                 <item.icon className={`h-4.5 w-4.5 ${item.color}`} strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1.5">{item.title}</h3>
+              <h3 className="text-sm font-semibold text-black dark:text-white mb-1.5">{item.title}</h3>
               <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
