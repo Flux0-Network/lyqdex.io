@@ -1,15 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  IconBell, IconUser, IconLogout, IconStar,
+  IconBell, IconStar,
   IconChevronDown, IconArrowUpRight, IconArrowDownRight,
   IconPlayerPlay, IconCamera, IconCheck,
 } from "@tabler/icons-react";
 
-interface User { id: string; wallet_address: string }
 interface Ticker { price: string; change: string; high: string; low: string; volume: string }
 
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "1D"];
@@ -50,35 +47,29 @@ export function AppNavbar({
   onReplayToggle?: () => void;
   onSaveChart?:    () => void;
 }) {
-  const router = useRouter();
-  const [user,      setUser]      = useState<User | null>(null);
-  const [menuOpen,  setMenuOpen]  = useState(false);
   const [pairOpen,  setPairOpen]  = useState(false);
   const [ticker,    setTicker]    = useState<Ticker | null>(null);
+  const [tickerSym, setTickerSym] = useState<string>("");
   const pairRef = useRef<HTMLDivElement>(null);
 
   const activeSym = symbol ?? "BTCUSDT";
   const activePair = PAIRS.find(p => p.symbol === activeSym) ?? PAIRS[0];
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data && setUser(data.user))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
+    let alive = true;
     function load() {
       fetch(`/api/market?symbol=${activeSym}`)
         .then((r) => r.json())
-        .then((d) => d.ticker && setTicker(d.ticker))
+        .then((d) => { if (alive && d.ticker) { setTicker(d.ticker); setTickerSym(activeSym); } })
         .catch(() => {});
     }
-    setTicker(null);
     load();
     const iv = setInterval(load, 5000);
-    return () => clearInterval(iv);
+    return () => { alive = false; clearInterval(iv); };
   }, [activeSym]);
+
+  // Show the ticker only once it matches the currently selected symbol
+  const ready = ticker !== null && tickerSym === activeSym;
 
   // Close pair dropdown on outside click
   useEffect(() => {
@@ -89,12 +80,6 @@ export function AppNavbar({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [pairOpen]);
-
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
-    router.push("/");
-  }
 
   const price  = parseFloat(ticker?.price  ?? "0");
   const change = parseFloat(ticker?.change ?? "0");
@@ -145,7 +130,7 @@ export function AppNavbar({
       <div className="w-px h-5 bg-white/[0.07] shrink-0" />
 
       {/* Live price */}
-      {ticker ? (
+      {ticker && ready ? (
         <>
           <div className="shrink-0">
             <div className={`text-base font-bold tabular-nums leading-tight ${isUp ? "text-emerald-400" : "text-red-400"}`}>
@@ -232,37 +217,6 @@ export function AppNavbar({
       <button className="p-1.5 text-gray-500 hover:text-white transition">
         <IconBell className="h-3.5 w-3.5" />
       </button>
-
-      {/* User — only show when logged in */}
-      {user && (
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-white/5 transition"
-          >
-            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
-              <IconUser className="h-3.5 w-3.5 text-gray-300" />
-            </div>
-          </button>
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-[#0f1018] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
-                <div className="px-3 py-2 border-b border-white/[0.06]">
-                  <div className="text-[10px] text-gray-500 mb-0.5">Wallet</div>
-                  <div className="text-[11px] text-white font-mono truncate">{user.wallet_address}</div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-white/[0.04] transition"
-                >
-                  <IconLogout className="h-3.5 w-3.5" /> Abmelden
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
     </nav>
   );
 }
