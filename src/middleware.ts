@@ -5,7 +5,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secre
 const ADMIN_EMAIL = "bezzo19@gmx.de";
 
 // Routes that don't need auth
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/_next", "/favicon", "/lyqdex-icon", "/api/market"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/_next", "/favicon", "/lyqdex-icon", "/api/market", "/api/waitlist"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
