@@ -359,14 +359,21 @@ export function ChartCanvas({
       ctx.fillText(lc.toLocaleString("en-US",{minimumFractionDigits:2}),W-PAD.right+(PAD.right-2)/2,y);
     }
 
-    // ── Time axis (smart formatting)
-    ctx.fillStyle="#6b7280";ctx.font="10px ui-monospace,monospace";ctx.textAlign="center";ctx.textBaseline="top";
+    // ── Time axis (smart formatting) — extend labels fully to the right edge
+    ctx.fillStyle="#6b7280";ctx.font="10px ui-monospace,monospace";ctx.textBaseline="top";
     const visRange = (candles[safeRmi]?.time ?? 0) - (candles[lmi]?.time ?? 0);
+    const lastIdx = candles.length - 1;
+    const barDt = candles.length >= 2 ? (candles[lastIdx].time - candles[lastIdx-1].time) || 3600 : 3600;
     const le = Math.max(1, Math.ceil(90/cw));
-    for (let i=lmi;i<=rmi;i+=le) {
-      const c=candles[i];if(!c)break;
-      const x=cX(i);if(x<PAD.left+30||x>W-PAD.right-10)continue;
-      ctx.fillText(fmtTime(c.time, visRange), x, H-PAD.bottom+3);
+    // Project past the last candle so labels reach the far right edge (under the price scale)
+    const iMax = rmi + Math.ceil((PAD.right + 24) / cw);
+    for (let i=lmi;i<=iMax;i+=le) {
+      const x=cX(i);
+      if (x < PAD.left+30 || x > W-4) continue;
+      const t = candles[i]?.time ?? (candles[lastIdx]?.time ?? 0) + (i - lastIdx) * barDt;
+      // right-align the outermost labels so they don't clip off-screen
+      if (x > W-38) { ctx.textAlign="right"; ctx.fillText(fmtTime(t, visRange), W-3, H-PAD.bottom+3); }
+      else          { ctx.textAlign="center"; ctx.fillText(fmtTime(t, visRange), x, H-PAD.bottom+3); }
     }
 
     // ── Drawings
