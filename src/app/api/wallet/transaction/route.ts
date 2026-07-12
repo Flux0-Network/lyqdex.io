@@ -14,14 +14,21 @@ export async function POST(req: NextRequest) {
   const amt = Number(amount);
   const col = mode === "real" ? "balance" : "demo_balance"; // default demo
 
-  if (type !== "deposit" && type !== "withdraw") {
+  if (type !== "deposit" && type !== "withdraw" && type !== "set") {
     return NextResponse.json({ error: "Ungültiger Transaktionstyp." }, { status: 400 });
+  }
+  // "set" (absolute value) is only allowed for the demo account
+  if (type === "set" && mode === "real") {
+    return NextResponse.json({ error: "Real-Guthaben kann nicht direkt gesetzt werden." }, { status: 400 });
   }
   if (!cur) {
     return NextResponse.json({ error: "Währung fehlt." }, { status: 400 });
   }
-  if (!isFinite(amt) || amt <= 0) {
-    return NextResponse.json({ error: "Betrag muss größer als 0 sein." }, { status: 400 });
+  if (!isFinite(amt) || amt < 0 || (type !== "set" && amt <= 0)) {
+    return NextResponse.json(
+      { error: type === "set" ? "Betrag darf nicht negativ sein." : "Betrag muss größer als 0 sein." },
+      { status: 400 }
+    );
   }
 
   // Load the wallet
@@ -37,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   const current = parseFloat((wallet as Record<string, string>)[col] ?? "0");
-  const next = type === "deposit" ? current + amt : current - amt;
+  const next = type === "set" ? amt : type === "deposit" ? current + amt : current - amt;
 
   if (next < 0) {
     return NextResponse.json({ error: "Unzureichendes Guthaben." }, { status: 400 });
