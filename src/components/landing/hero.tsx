@@ -206,17 +206,6 @@ export function Hero() {
               Echtzeit-Charts mit Indikatoren, Replay-Modus und unter 1ms Matching — alles non-custodial. Deine Keys, deine Coins.
             </motion.p>
 
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }}
-              className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Link href="/register"
-                className="px-7 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black font-semibold text-sm transition text-center">
-                Konto erstellen
-              </Link>
-              <Link href="/trade"
-                className="px-7 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.07] dark:hover:bg-white/[0.08] text-gray-700 dark:text-gray-300 font-semibold text-sm transition text-center">
-                Live Demo →
-              </Link>
-            </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.25 }}
               className="mt-8 flex flex-wrap gap-2">
