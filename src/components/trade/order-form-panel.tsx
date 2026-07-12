@@ -56,14 +56,24 @@ export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC", mode = "demo"
 
   function handleOrder() {
     if (amt <= 0 || effPrice <= 0) return;
-    const trade = {
+    const entry = {
       id: Math.random().toString(36).slice(2, 10),
-      side, price: effPrice, amount: amt, leverage, symbol, time: Date.now(),
+      side, price: effPrice, amount: amt, leverage, symbol,
+      time: Date.now(), orderType,
     };
-    const positions = JSON.parse(localStorage.getItem("lyqdex_positions") || "[]");
-    positions.push(trade);
-    localStorage.setItem("lyqdex_positions", JSON.stringify(positions.slice(-50)));
-    window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: trade }));
+    if (orderType === "limit") {
+      // Limit orders go to pending orders tab
+      const orders = JSON.parse(localStorage.getItem("lyqdex_orders") || "[]");
+      orders.push(entry);
+      localStorage.setItem("lyqdex_orders", JSON.stringify(orders.slice(-50)));
+      window.dispatchEvent(new CustomEvent("lyqdex-order", { detail: entry }));
+    } else {
+      // Market orders open immediately as a position
+      const positions = JSON.parse(localStorage.getItem("lyqdex_positions") || "[]");
+      positions.push(entry);
+      localStorage.setItem("lyqdex_positions", JSON.stringify(positions.slice(-50)));
+      window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: entry }));
+    }
     setAmount("");
     setConfirmed(true);
     setTimeout(() => setConfirmed(false), 1500);

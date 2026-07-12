@@ -12,36 +12,42 @@ interface Position {
   amount: number;
   leverage: number;
   time: number;
+  orderType?: "market" | "limit";
 }
 
-const POS_KEY  = "lyqdex_positions";
-const HIST_KEY = "lyqdex_trades";
+const POS_KEY   = "lyqdex_positions";
+const ORD_KEY   = "lyqdex_orders";
+const HIST_KEY  = "lyqdex_trades";
 
 export function PositionsPanel() {
-  const [tab, setTab] = useState<Tab>("positions");
+  const [tab,       setTab]       = useState<Tab>("positions");
   const [positions, setPositions] = useState<Position[]>([]);
+  const [orders,    setOrders]    = useState<Position[]>([]);
   const [history,   setHistory]   = useState<Position[]>([]);
   const [prices,    setPrices]    = useState<Record<string, number>>({});
 
   const reload = useCallback(() => {
     try { setPositions(JSON.parse(localStorage.getItem(POS_KEY)  || "[]")); } catch { /* ignore */ }
+    try { setOrders   (JSON.parse(localStorage.getItem(ORD_KEY)  || "[]")); } catch { /* ignore */ }
     try { setHistory  (JSON.parse(localStorage.getItem(HIST_KEY) || "[]")); } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
     reload();
     const h = () => reload();
-    window.addEventListener("lyqdex-trade", h);
+    window.addEventListener("lyqdex-trade",           h);
+    window.addEventListener("lyqdex-order",           h);
     window.addEventListener("lyqdex-position-closed", h);
     return () => {
-      window.removeEventListener("lyqdex-trade", h);
+      window.removeEventListener("lyqdex-trade",           h);
+      window.removeEventListener("lyqdex-order",           h);
       window.removeEventListener("lyqdex-position-closed", h);
     };
   }, [reload]);
 
-  // Live prices for all open positions
+  // Live prices for all open positions + pending orders
   useEffect(() => {
-    const syms = [...new Set(positions.map((p) => p.symbol))];
+    const syms = [...new Set([...positions, ...orders].map((p) => p.symbol))];
     if (!syms.length) return;
     function fetchAll() {
       syms.forEach((sym) =>
@@ -55,6 +61,12 @@ export function PositionsPanel() {
     const iv = setInterval(fetchAll, 5000);
     return () => clearInterval(iv);
   }, [positions]);
+
+  function cancelOrder(id: string) {
+    const updated = orders.filter((o) => o.id !== id);
+    localStorage.setItem(ORD_KEY, JSON.stringify(updated));
+    setOrders(updated);
+  }
 
   function closePosition(id: string) {
     const pos = positions.find((p) => p.id === id);
@@ -78,7 +90,7 @@ export function PositionsPanel() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "positions", label: `Positionen (${positions.length})` },
-    { key: "orders",    label: "Orders" },
+    { key: "orders",    label: `Orders (${orders.length})` },
     { key: "history",   label: `Historie (${history.length})` },
   ];
 
@@ -157,9 +169,56 @@ export function PositionsPanel() {
         )
       )}
 
-      {/* Orders tab – placeholder */}
+      {/* Orders tab – pending limit orders */}
       {tab === "orders" && (
-        <div className="flex-1 flex items-center justify-center text-gray-600">Keine offenen Orders</div>
+        orders.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-gray-600">Keine offenen Orders</div>
+        ) : (
+          <div className="flex-1 overflow-auto min-h-0">
+            <table className="w-full min-w-[480px]">
+              <thead>
+                <tr className="text-gray-600 text-[10px] border-b border-white/[0.04]">
+                  {["Symbol","Typ","Seite","Limit-Preis","Aktuell","Menge","Hebel",""].map((h, i) => (
+                    <th key={i} className={`py-1 font-normal ${i === 0 ? "text-left px-3" : i === 7 ? "px-2" : "text-right px-2"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => {
+                  const cur = prices[o.symbol];
+                  const isLong = o.side === "buy";
+                  return (
+                    <tr key={o.id} className="border-t border-white/[0.03] hover:bg-white/[0.02]">
+                      <td className="px-3 py-1.5 text-white font-medium">{o.symbol.replace(/USDT$/i,"")}/USDT</td>
+                      <td className="px-2 py-1.5 text-gray-400">Limit</td>
+                      <td className="px-2 py-1.5">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${isLong ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
+                          {isLong ? "Long" : "Short"}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-gray-300 tabular-nums">
+                        {o.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-400">
+                        {cur ? cur.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "–"}
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-400">{o.amount.toFixed(6)}</td>
+                      <td className="px-2 py-1.5 text-right text-amber-400 tabular-nums font-medium">{o.leverage}x</td>
+                      <td className="px-2 py-1.5">
+                        <button
+                          onClick={() => cancelOrder(o.id)}
+                          className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition"
+                        >
+                          Stornieren
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       {/* History tab */}
