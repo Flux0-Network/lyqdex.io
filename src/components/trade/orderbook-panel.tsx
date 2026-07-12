@@ -55,15 +55,17 @@ function BookRow({
   );
 }
 
-export function OrderbookPanel() {
+export function OrderbookPanel({ symbol = "BTCUSDT" }: { symbol?: string }) {
   const [asks, setAsks] = useState<OrderEntry[]>([]);
   const [bids, setBids] = useState<OrderEntry[]>([]);
   const [midPrice, setMidPrice] = useState("0");
   const [change, setChange] = useState("0");
 
+  const base = symbol.replace(/USDT$/i, "");
+
   useEffect(() => {
     function load() {
-      fetch("/api/market?symbol=BTCUSDT")
+      fetch(`/api/market?symbol=${symbol}`)
         .then((r) => r.json())
         .then((d) => {
           if (d.orderbook) {
@@ -80,7 +82,7 @@ export function OrderbookPanel() {
     load();
     const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [symbol]);
 
   const maxTotal = Math.max(
     ...asks.map((o) => parseFloat(o.price) * parseFloat(o.amount)),
@@ -96,7 +98,7 @@ export function OrderbookPanel() {
       <div className="grid px-2 py-1 text-gray-500 border-b border-white/[0.06]"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 14px" }}>
         <div>Preis (USDT)</div>
-        <div className="text-right">Menge (BTC)</div>
+        <div className="text-right">Menge ({base})</div>
         <div className="text-right">Gesamt</div>
         <div />
       </div>
