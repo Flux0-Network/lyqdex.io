@@ -481,8 +481,8 @@ export function ChartCanvas({
       if (e.touches.length===1&&dragRef.current) {
         const dx=e.touches[0].clientX-dragRef.current.startX;
         const now=performance.now();
-        setOffset(Math.max(0,dragRef.current.startOffset-dx));
-        if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=-(e.touches[0].clientX-lastMXRef.current.x)/dt*16;}
+        setOffset(Math.max(0,dragRef.current.startOffset+dx));
+        if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.touches[0].clientX-lastMXRef.current.x)/dt*16;}
         lastMXRef.current={x:e.touches[0].clientX,t:performance.now()};
       } else if (e.touches.length===2&&t2) {
         const midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
@@ -491,7 +491,7 @@ export function ChartCanvas({
 
         // Pan from horizontal midpoint movement
         const panDx=midX-t2.prevMidX;
-        setOffset(p=>Math.max(0,p-panDx));
+        setOffset(p=>Math.max(0,p+panDx));
 
         // Zoom from spread change (pinch) + vertical midpoint movement
         // Up swipe = zoom in (bigger candles), down swipe = zoom out
@@ -630,8 +630,8 @@ export function ChartCanvas({
     // Pan
     if(dragRef.current){
       const dx=e.clientX-dragRef.current.startX,now=performance.now();
-      setOffset(Math.max(0,dragRef.current.startOffset-dx));
-      if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=-(e.clientX-lastMXRef.current.x)/dt*16;}
+      setOffset(Math.max(0,dragRef.current.startOffset+dx));
+      if(lastMXRef.current){const dt=now-lastMXRef.current.t;if(dt>0)velRef.current=(e.clientX-lastMXRef.current.x)/dt*16;}
       lastMXRef.current={x:e.clientX,t:performance.now()};
     }
   }
