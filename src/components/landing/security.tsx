@@ -57,7 +57,7 @@ const items = [
 
 export function Security() {
   return (
-    <section className="py-24 px-4">
+    <section className="py-24 px-4 bg-transparent">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
