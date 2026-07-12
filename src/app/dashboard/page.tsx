@@ -1,19 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  IconLayoutDashboard, IconChartCandle, IconWallet, IconLogin,
-  IconAdjustments, IconPlus, IconX, IconGripVertical, IconArrowsMaximize,
-  IconCheck,
+  IconAdjustments, IconPlus, IconX, IconGripVertical, IconArrowsMaximize, IconCheck,
 } from "@tabler/icons-react";
+import { AppSidebar, SIDEBAR_W } from "@/components/shared/app-sidebar";
 import {
   SYMBOLS, WIDGET_META, WidgetBody, widgetIcon, widgetTitle,
   type WidgetConfig, type WidgetType, type MarketMap, type MarketResp,
 } from "@/components/dashboard/dashboard-widgets";
 
-const SIDEBAR_W = 36;
 const STORAGE_KEY = "lyqdex_dashboard_v1";
 
 const DEFAULT_LAYOUT: WidgetConfig[] = [
@@ -114,34 +110,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0b0e]">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] z-50 flex flex-col items-center" style={{ width: SIDEBAR_W }}>
-        <div className="h-11 flex items-center justify-center shrink-0">
-          <Link href="/"><Image src="/lyqdex-icon.png" alt="LyqDex" width={26} height={26} /></Link>
-        </div>
-        <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center pt-2 gap-1">
-          <Link href="/dashboard" title="Dashboard" className="h-6 w-6 rounded flex items-center justify-center text-cyan-400 bg-white/[0.06]">
-            <IconLayoutDashboard className="h-3.5 w-3.5" />
-          </Link>
-          <Link href="/trade" title="Chart" className="h-6 w-6 rounded flex items-center justify-center text-gray-600 hover:text-cyan-400 hover:bg-white/[0.06] transition">
-            <IconChartCandle className="h-3.5 w-3.5" />
-          </Link>
-          <Link href="/wallet" title="Wallet" className="h-6 w-6 rounded flex items-center justify-center text-gray-600 hover:text-cyan-400 hover:bg-white/[0.06] transition">
-            <IconWallet className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="w-full border-r border-white/[0.06] flex flex-col items-center pb-2.5">
-          {walletAddr ? (
-            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center" title={walletAddr}>
-              <span className="text-[9px] font-bold text-cyan-300">{walletAddr.slice(2, 4).toUpperCase()}</span>
-            </div>
-          ) : (
-            <Link href="/login" title="Anmelden" className="h-6 w-6 rounded-full border border-white/10 flex items-center justify-center text-gray-500 hover:text-cyan-400 hover:border-cyan-500/30 transition">
-              <IconLogin className="h-3.5 w-3.5" />
-            </Link>
-          )}
-        </div>
-      </div>
+      <AppSidebar active="dashboard" walletAddr={walletAddr} />
 
       {/* Content */}
       <div style={{ marginLeft: SIDEBAR_W }} className="min-h-screen">
