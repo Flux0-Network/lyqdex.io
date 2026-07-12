@@ -8,11 +8,7 @@ import { useMarketWS } from "@/hooks/use-market-ws";
 import { useReplay } from "@/hooks/use-replay";
 import { IconSettings, IconX } from "@tabler/icons-react";
 
-interface UserTrade {
-  side: "buy" | "sell";
-  price: number;
-  time: number;
-}
+interface UserTrade { side: "buy" | "sell"; price: number; time: number; }
 
 const TF_INTERVAL: Record<string, string> = {
   "1m": "1m", "5m": "5m", "15m": "15m", "1H": "1h", "4H": "4h", "1D": "1d",
@@ -29,22 +25,43 @@ function calcMA(candles: Candle[], period: number) {
   return candles.slice(-period).reduce((s, c) => s + c.close, 0) / period;
 }
 
-export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
-  const [history,    setHistory]    = useState<Candle[]>([]);
-  const [hoverCandle, setHoverCandle] = useState<Candle | null>(null);
-  const [userTrades, setUserTrades] = useState<UserTrade[]>([]);
+export function ChartPanel({
+  timeframe = "1H",
+  onReplayChange,
+  saveRef,
+}: {
+  timeframe?:       string;
+  onReplayChange?:  (active: boolean, toggle: () => void) => void;
+  saveRef?:         React.MutableRefObject<(() => void) | null>;
+}) {
+  const [history,      setHistory]      = useState<Candle[]>([]);
+  const [hoverCandle,  setHoverCandle]  = useState<Candle | null>(null);
+  const [userTrades,   setUserTrades]   = useState<UserTrade[]>([]);
 
   // Chart settings
-  const [activeTool,  setActiveTool]  = useState<DrawingTool>("cursor");
-  const [drawings,    setDrawings]    = useState<Drawing[]>([]);
-  const [chartType,   setChartType]   = useState<ChartType>("candle");
-  const [visibleMAs,  setVisibleMAs]  = useState([true, true, true, true]);
-  const [showVolume,  setShowVolume]  = useState(true);
+  const [activeTool,   setActiveTool]   = useState<DrawingTool>("cursor");
+  const [drawings,     setDrawings]     = useState<Drawing[]>([]);
+  const [chartType,    setChartType]    = useState<ChartType>("candle");
+  const [visibleMAs,   setVisibleMAs]   = useState([true, true, true, true]);
+  const [showVolume,   setShowVolume]   = useState(true);
+  const [candleColors, setCandleColors] = useState({ up: "#26a69a", down: "#ef5350" });
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const canvasSaveRef = useRef<(() => void) | null>(null);
 
   const { candle: liveCandle, source: wsSource, connected } = useMarketWS("BTCUSDT", timeframe);
   const replay = useReplay(history);
+
+  // Expose save function upward
+  useEffect(() => {
+    if (!saveRef) return;
+    saveRef.current = () => canvasSaveRef.current?.();
+  }, [saveRef]);
+
+  // Expose replay controls upward
+  useEffect(() => {
+    onReplayChange?.(replay.active, replay.toggle);
+  }, [replay.active, replay.toggle, onReplayChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,13 +78,11 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe]);
 
-  // Close settings panel on outside click
+  // Close settings on outside click
   useEffect(() => {
     if (!showSettings) return;
     function handler(e: MouseEvent) {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
-        setShowSettings(false);
-      }
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setShowSettings(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -91,8 +106,7 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
     try { setUserTrades(JSON.parse(localStorage.getItem("lyqdex_trades") || "[]")); } catch {}
   }, []);
   useEffect(() => {
-    const handler = (e: Event) =>
-      setUserTrades(p => [...p, (e as CustomEvent<UserTrade>).detail]);
+    const handler = (e: Event) => setUserTrades(p => [...p, (e as CustomEvent<UserTrade>).detail]);
     window.addEventListener("lyqdex-trade", handler);
     return () => window.removeEventListener("lyqdex-trade", handler);
   }, []);
@@ -131,9 +145,7 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
           <span className="hidden xl:flex items-center gap-2 ml-1">
             {maValues.map(({ label, color, value }, i) =>
               visibleMAs[i] && value ? (
-                <span key={label} style={{ color }} className="tabular-nums">
-                  {label}: {fmt(value)}
-                </span>
+                <span key={label} style={{ color }} className="tabular-nums">{label}: {fmt(value)}</span>
               ) : null,
             )}
           </span>
@@ -144,34 +156,23 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
               <button
                 onClick={() => setShowSettings(s => !s)}
                 title="Chart-Einstellungen"
-                className={`text-[9px] px-1 py-0.5 rounded border transition ${
-                  showSettings
-                    ? "border-white/[0.18] text-gray-300"
-                    : "border-white/[0.06] text-gray-600 hover:text-gray-300 hover:border-white/[0.14]"
-                }`}
+                className={`p-0.5 rounded border transition ${showSettings ? "border-white/[0.18] text-gray-300" : "border-white/[0.06] text-gray-600 hover:text-gray-300 hover:border-white/[0.14]"}`}
               >
                 <IconSettings className="h-3 w-3" />
               </button>
 
               {showSettings && (
-                <div className="absolute right-0 top-6 z-50 w-44 rounded-lg border border-white/[0.08] bg-[#0d0e15] shadow-xl p-3 text-[10px]">
+                <div className="absolute right-0 top-6 z-50 w-52 rounded-lg border border-white/[0.08] bg-[#0d0e15] shadow-xl p-3 text-[10px]">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-400 font-medium">Einstellungen</span>
-                    <button onClick={() => setShowSettings(false)} className="text-gray-600 hover:text-white">
-                      <IconX className="h-3 w-3" />
-                    </button>
+                    <button onClick={() => setShowSettings(false)} className="text-gray-600 hover:text-white"><IconX className="h-3 w-3" /></button>
                   </div>
 
                   {/* MA toggles */}
                   <p className="text-gray-600 mb-1 uppercase tracking-widest text-[8px]">Moving Averages</p>
                   {MA_CONFIG.map(({ label, color }, i) => (
                     <label key={label} className="flex items-center gap-2 py-0.5 cursor-pointer hover:text-white text-gray-400">
-                      <input
-                        type="checkbox"
-                        checked={visibleMAs[i]}
-                        onChange={() => setVisibleMAs(prev => prev.map((v, j) => j === i ? !v : v))}
-                        className="accent-cyan-500 h-2.5 w-2.5"
-                      />
+                      <input type="checkbox" checked={visibleMAs[i]} onChange={() => setVisibleMAs(prev => prev.map((v, j) => j === i ? !v : v))} className="accent-cyan-500 h-2.5 w-2.5" />
                       <span style={{ color }}>{label}</span>
                     </label>
                   ))}
@@ -179,15 +180,35 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
                   <div className="border-t border-white/[0.06] my-2" />
 
                   {/* Volume toggle */}
-                  <label className="flex items-center gap-2 cursor-pointer hover:text-white text-gray-400">
-                    <input
-                      type="checkbox"
-                      checked={showVolume}
-                      onChange={() => setShowVolume(v => !v)}
-                      className="accent-cyan-500 h-2.5 w-2.5"
-                    />
+                  <label className="flex items-center gap-2 mb-2 cursor-pointer hover:text-white text-gray-400">
+                    <input type="checkbox" checked={showVolume} onChange={() => setShowVolume(v => !v)} className="accent-cyan-500 h-2.5 w-2.5" />
                     Volumen
                   </label>
+
+                  <div className="border-t border-white/[0.06] my-2" />
+
+                  {/* Candle colors */}
+                  <p className="text-gray-600 mb-1.5 uppercase tracking-widest text-[8px]">Kerzen-Farben</p>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-emerald-400">
+                      <input
+                        type="color"
+                        value={candleColors.up}
+                        onChange={e => setCandleColors(c => ({ ...c, up: e.target.value }))}
+                        className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0"
+                      />
+                      Long
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-red-400">
+                      <input
+                        type="color"
+                        value={candleColors.down}
+                        onChange={e => setCandleColors(c => ({ ...c, down: e.target.value }))}
+                        className="h-4 w-6 rounded border-0 cursor-pointer bg-transparent p-0"
+                      />
+                      Short
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
@@ -215,7 +236,7 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
         </div>
       )}
 
-      {/* Toolbar + chart */}
+      {/* Toolbar + chart canvas */}
       <div className="flex-1 min-h-0 flex">
         <ChartToolbar
           activeTool={activeTool}
@@ -233,12 +254,16 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
               chartType={chartType}
               visibleMAs={visibleMAs}
               showVolume={showVolume}
+              candleColors={candleColors}
               activeTool={activeTool}
               drawings={drawings}
               onAddDrawing={d => {
                 setDrawings(prev => [...prev, d]);
-                setActiveTool("cursor"); // auto-return to cursor after drawing
+                setActiveTool("cursor");
               }}
+              onUpdateDrawing={d => setDrawings(prev => prev.map(x => x.id === d.id ? d : x))}
+              onDeleteDrawing={id => setDrawings(prev => prev.filter(x => x.id !== id))}
+              saveRef={canvasSaveRef}
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-600 text-xs">
@@ -248,7 +273,6 @@ export function ChartPanel({ timeframe = "1H" }: { timeframe?: string }) {
         </div>
       </div>
 
-      {/* Replay bar */}
       {replay.active && (
         <ReplayBar replay={replay} current={candles.at(-1) ?? null} timeframe={timeframe} />
       )}

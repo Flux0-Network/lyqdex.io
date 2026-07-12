@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   IconBell, IconUser, IconLogout, IconStar,
   IconChevronDown, IconArrowUpRight, IconArrowDownRight,
+  IconPlayerPlay, IconCamera,
 } from "@tabler/icons-react";
 
 interface User { id: string; wallet_address: string }
@@ -17,10 +18,16 @@ export function AppNavbar({
   sidebarWidth = 0,
   timeframe,
   onTimeframe,
+  replayActive,
+  onReplayToggle,
+  onSaveChart,
 }: {
-  sidebarWidth?: number;
-  timeframe?: string;
-  onTimeframe?: (tf: string) => void;
+  sidebarWidth?:    number;
+  timeframe?:       string;
+  onTimeframe?:     (tf: string) => void;
+  replayActive?:    boolean;
+  onReplayToggle?:  () => void;
+  onSaveChart?:     () => void;
 }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -131,6 +138,29 @@ export function AppNavbar({
       )}
 
       <div className="flex-1" />
+
+      {/* Replay button */}
+      {onReplayToggle && (
+        <button
+          onClick={onReplayToggle}
+          title="Replay / Backtest"
+          className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded border transition font-medium ${
+            replayActive
+              ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400"
+              : "border-white/[0.08] text-gray-500 hover:text-white hover:border-white/[0.18]"
+          }`}
+        >
+          <IconPlayerPlay className="h-2.5 w-2.5" />
+          Replay
+        </button>
+      )}
+
+      {/* Save chart */}
+      {onSaveChart && (
+        <button onClick={onSaveChart} title="Chart als Bild speichern" className="p-1.5 text-gray-500 hover:text-white transition">
+          <IconCamera className="h-3.5 w-3.5" />
+        </button>
+      )}
 
       {/* Bell */}
       <button className="p-1.5 text-gray-500 hover:text-white transition">
