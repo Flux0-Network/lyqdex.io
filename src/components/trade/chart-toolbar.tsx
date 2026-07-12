@@ -3,7 +3,7 @@
 import {
   IconCursorText, IconTrendingUp, IconMinus, IconRectangle,
   IconChartLine, IconChartCandle, IconChartBar, IconChartAreaLine,
-  IconTrash, IconMagnet,
+  IconTrash, IconMagnet, IconArrowBigUp, IconArrowBigDown,
 } from "@tabler/icons-react";
 import type { DrawingTool, ChartType, MagnetMode } from "./chart-canvas";
 
@@ -23,6 +23,8 @@ const DRAW_TOOLS: { tool: DrawingTool; Icon: React.ComponentType<{ className?: s
   { tool: "hline",     Icon: IconMinus,        title: "Horizontale Linie" },
   { tool: "rect",      Icon: IconRectangle,    title: "Rechteck" },
   { tool: "fib",       Icon: IconChartLine,    title: "Fibonacci" },
+  { tool: "long",      Icon: IconArrowBigUp,   title: "Long – Einstieg / TP / SL" },
+  { tool: "short",     Icon: IconArrowBigDown, title: "Short – Einstieg / TP / SL" },
 ];
 
 const CHART_TYPES: { type: ChartType; Icon: React.ComponentType<{ className?: string }>; title: string }[] = [
@@ -73,7 +75,7 @@ export function ChartToolbar({ activeTool, onToolChange, chartType, onTypeChange
           active={activeTool === tool}
           title={title}
           onClick={() => onToolChange(tool)}
-          color={undefined}
+          color={tool === "long" ? "green" : tool === "short" ? "red" : undefined}
         >
           <Icon className="h-3.5 w-3.5" />
         </Btn>

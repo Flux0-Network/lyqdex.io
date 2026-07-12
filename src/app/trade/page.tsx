@@ -7,6 +7,7 @@ import { ChartPanel } from "@/components/trade/chart-panel";
 import { OrderbookPanel } from "@/components/trade/orderbook-panel";
 import { OrderFormPanel } from "@/components/trade/order-form-panel";
 import { WalletPanel } from "@/components/trade/wallet-panel";
+import { PositionsPanel } from "@/components/trade/positions-panel";
 
 function baseOf(symbol: string) {
   return symbol.replace(/USDT$/i, "");
@@ -54,14 +55,19 @@ export default function TradePage() {
 
       {/* Content */}
       <div className="absolute top-11 bottom-0 right-0 flex" style={{ left: SIDEBAR_W }}>
-        {/* Chart */}
-        <div className="flex-1 min-w-0 border-r border-white/5">
-          <ChartPanel
-            symbol={symbol}
-            timeframe={timeframe}
-            onReplayChange={handleReplayChange}
-            saveRef={saveChartRef}
-          />
+        {/* Chart + positions */}
+        <div className="flex-1 min-w-0 border-r border-white/5 flex flex-col">
+          <div className="flex-1 min-h-0">
+            <ChartPanel
+              symbol={symbol}
+              timeframe={timeframe}
+              onReplayChange={handleReplayChange}
+              saveRef={saveChartRef}
+            />
+          </div>
+          <div className="h-[110px] shrink-0 border-t border-white/[0.06]">
+            <PositionsPanel />
+          </div>
         </div>
 
         {/* Right panel: order form + orderbook + wallet */}
