@@ -10,13 +10,13 @@ import {
   type WidgetConfig, type WidgetType, type MarketMap, type MarketResp,
 } from "@/components/dashboard/dashboard-widgets";
 
-const STORAGE_KEY = "lyqdex_dashboard_v1";
+const STORAGE_KEY = "lyqdex_dashboard_v2";
 
 const DEFAULT_LAYOUT: WidgetConfig[] = [
-  { id: "w-portfolio", type: "portfolio", size: 1 },
+  { id: "w-portfolio", type: "portfolio", size: 2 },
   { id: "w-watchlist", type: "watchlist", size: 1 },
-  { id: "w-movers",    type: "movers",    size: 1 },
   { id: "w-chart",     type: "chart",     size: 2, symbol: "BTCUSDT" },
+  { id: "w-movers",    type: "movers",    size: 1 },
   { id: "w-stats",     type: "stats",     size: 1, symbol: "BTCUSDT" },
 ];
 
