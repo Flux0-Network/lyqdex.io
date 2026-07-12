@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppNavbar } from "@/components/shared/app-navbar";
 import { ChartPanel } from "@/components/trade/chart-panel";
 import { OrderbookPanel } from "@/components/trade/orderbook-panel";
-import { IconLogin } from "@tabler/icons-react";
+import { IconLogin, IconLayoutDashboard } from "@tabler/icons-react";
 
 const SIDEBAR_W = 36;
 
@@ -45,8 +45,19 @@ export default function TradePage() {
           </Link>
         </div>
 
-        {/* Bottom: border + login/profile */}
-        <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center justify-end pb-2.5">
+        {/* Middle: nav icons */}
+        <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center pt-2 gap-1">
+          <Link
+            href="/dashboard"
+            title="Dashboard"
+            className="h-6 w-6 rounded flex items-center justify-center text-gray-600 hover:text-cyan-400 hover:bg-white/[0.06] transition"
+          >
+            <IconLayoutDashboard className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        {/* Bottom: login/profile */}
+        <div className="w-full border-r border-white/[0.06] flex flex-col items-center pb-2.5">
           {walletAddr ? (
             <div
               className="h-6 w-6 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center cursor-pointer"

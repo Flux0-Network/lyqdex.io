@@ -167,8 +167,8 @@ export function AppNavbar({
         <IconBell className="h-3.5 w-3.5" />
       </button>
 
-      {/* User */}
-      {user ? (
+      {/* User — only show avatar/menu when logged in, nothing when logged out */}
+      {user && (
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -195,15 +195,6 @@ export function AppNavbar({
               </div>
             </>
           )}
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5">
-          <Link href="/login" className="text-[11px] text-gray-500 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/5">
-            Anmelden
-          </Link>
-          <Link href="/register" className="text-[11px] bg-white text-black font-semibold px-2.5 py-1 rounded-lg hover:bg-gray-200 transition">
-            Registrieren
-          </Link>
         </div>
       )}
     </nav>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { ChartCanvas, type Candle, type Drawing, type DrawingTool, type ChartType } from "./chart-canvas";
+import { ChartCanvas, type Candle, type Drawing, type DrawingTool, type ChartType, type MagnetMode } from "./chart-canvas";
 import { ChartToolbar } from "./chart-toolbar";
 import { ReplayBar } from "./replay-bar";
 import { useMarketWS } from "@/hooks/use-market-ws";
 import { useReplay } from "@/hooks/use-replay";
-import { IconSettings, IconX } from "@tabler/icons-react";
+import { IconSettings, IconX, IconChevronUp, IconChevronDown } from "@tabler/icons-react";
 
 interface UserTrade { side: "buy" | "sell"; price: number; time: number; }
 
@@ -24,6 +24,8 @@ function calcMA(candles: Candle[], period: number) {
   if (candles.length < period) return null;
   return candles.slice(-period).reduce((s, c) => s + c.close, 0) / period;
 }
+
+type PosDrawing = Extract<Drawing, { type: "long" | "short" }>;
 
 export function ChartPanel({
   timeframe = "1H",
@@ -45,7 +47,9 @@ export function ChartPanel({
   const [visibleMAs,   setVisibleMAs]   = useState([true, true, true, true]);
   const [showVolume,   setShowVolume]   = useState(true);
   const [candleColors, setCandleColors] = useState({ up: "#26a69a", down: "#ef5350" });
+  const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
   const [showSettings, setShowSettings] = useState(false);
+  const [posPanel,     setPosPanel]     = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const canvasSaveRef = useRef<(() => void) | null>(null);
 
@@ -121,6 +125,13 @@ export function ChartPanel({
     () => MA_CONFIG.map(({ period, color, label }) => ({ label, color, value: calcMA(candles, period) })),
     [candles],
   );
+
+  // Positions for the bottom panel
+  const positions = useMemo<PosDrawing[]>(
+    () => drawings.filter((d): d is PosDrawing => d.type === "long" || d.type === "short"),
+    [drawings],
+  );
+  const currentPrice = candles.at(-1)?.close ?? 0;
 
   const display  = hoverCandle ?? candles.at(-1) ?? null;
   const delta    = display ? display.close - display.open : 0;
@@ -213,19 +224,6 @@ export function ChartPanel({
               )}
             </div>
 
-            {/* Replay toggle */}
-            <button
-              onClick={replay.toggle}
-              title="Replay / Backtest"
-              className={`text-[9px] px-1.5 py-0.5 rounded border transition font-medium ${
-                replay.active
-                  ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400"
-                  : "border-white/[0.08] text-gray-600 hover:text-gray-300 hover:border-white/[0.18]"
-              }`}
-            >
-              ⏮ Replay
-            </button>
-
             {!replay.active && (
               <span className="flex items-center gap-1 text-[10px] text-gray-600">
                 <span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-500" : "bg-gray-600"}`} />
@@ -237,37 +235,110 @@ export function ChartPanel({
       )}
 
       {/* Toolbar + chart canvas */}
-      <div className="flex-1 min-h-0 flex">
-        <ChartToolbar
-          activeTool={activeTool}
-          onToolChange={t => setActiveTool(t)}
-          chartType={chartType}
-          onTypeChange={t => setChartType(t)}
-          onClearAll={() => setDrawings([])}
-        />
-        <div className="flex-1 min-w-0">
-          {candles.length > 0 ? (
-            <ChartCanvas
-              candles={candles}
-              userTrades={visibleTrades}
-              onHover={setHoverCandle}
-              chartType={chartType}
-              visibleMAs={visibleMAs}
-              showVolume={showVolume}
-              candleColors={candleColors}
-              activeTool={activeTool}
-              drawings={drawings}
-              onAddDrawing={d => {
-                setDrawings(prev => [...prev, d]);
-                setActiveTool("cursor");
-              }}
-              onUpdateDrawing={d => setDrawings(prev => prev.map(x => x.id === d.id ? d : x))}
-              onDeleteDrawing={id => setDrawings(prev => prev.filter(x => x.id !== id))}
-              saveRef={canvasSaveRef}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-600 text-xs">
-              Lade Marktdaten…
+      <div className="flex-1 min-h-0 flex flex-col relative">
+        <div className="flex-1 min-h-0 flex">
+          <ChartToolbar
+            activeTool={activeTool}
+            onToolChange={t => setActiveTool(t)}
+            chartType={chartType}
+            onTypeChange={t => setChartType(t)}
+            magnetMode={magnetMode}
+            onMagnetChange={setMagnetMode}
+            onClearAll={() => setDrawings([])}
+          />
+          <div className="flex-1 min-w-0">
+            {candles.length > 0 ? (
+              <ChartCanvas
+                candles={candles}
+                userTrades={visibleTrades}
+                onHover={setHoverCandle}
+                chartType={chartType}
+                visibleMAs={visibleMAs}
+                showVolume={showVolume}
+                candleColors={candleColors}
+                magnetMode={magnetMode}
+                activeTool={activeTool}
+                drawings={drawings}
+                onAddDrawing={d => {
+                  setDrawings(prev => [...prev, d]);
+                  setActiveTool("cursor");
+                }}
+                onUpdateDrawing={d => setDrawings(prev => prev.map(x => x.id === d.id ? d : x))}
+                onDeleteDrawing={id => setDrawings(prev => prev.filter(x => x.id !== id))}
+                saveRef={canvasSaveRef}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-600 text-xs">
+                Lade Marktdaten…
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Position panel pull-up */}
+        <div className="shrink-0">
+          {/* Handle bar */}
+          <button
+            onClick={() => setPosPanel(p => !p)}
+            className="w-full flex items-center justify-center gap-1.5 py-0.5 border-t border-white/[0.06] bg-[#080910] hover:bg-white/[0.03] transition text-gray-600 hover:text-gray-400 text-[10px]"
+          >
+            {posPanel ? <IconChevronDown className="h-3 w-3" /> : <IconChevronUp className="h-3 w-3" />}
+            Positionen {positions.length > 0 && `(${positions.length})`}
+          </button>
+
+          {posPanel && (
+            <div className="border-t border-white/[0.06] bg-[#08090f] max-h-40 overflow-y-auto">
+              {positions.length === 0 ? (
+                <div className="text-center text-gray-600 text-[10px] py-4">Keine offenen Positionen</div>
+              ) : (
+                <table className="w-full text-[10px]">
+                  <thead>
+                    <tr className="text-gray-600 border-b border-white/[0.04]">
+                      <th className="text-left px-3 py-1 font-normal">Typ</th>
+                      <th className="text-right px-2 py-1 font-normal">Entry</th>
+                      <th className="text-right px-2 py-1 font-normal">Target</th>
+                      <th className="text-right px-2 py-1 font-normal">Stop</th>
+                      <th className="text-right px-2 py-1 font-normal">R:R</th>
+                      <th className="text-right px-2 py-1 font-normal">P&amp;L</th>
+                      <th className="px-2 py-1" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {positions.map(pos => {
+                      const isLong = pos.type === "long";
+                      const risk   = Math.abs(pos.entry - pos.stop);
+                      const reward = Math.abs(pos.entry - pos.target);
+                      const rr     = risk > 0 ? (reward / risk).toFixed(2) : "—";
+                      const pnlPct = currentPrice > 0
+                        ? ((currentPrice - pos.entry) / pos.entry * 100 * (isLong ? 1 : -1))
+                        : 0;
+                      return (
+                        <tr key={pos.id} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
+                          <td className={`px-3 py-1 font-semibold ${isLong ? "text-emerald-400" : "text-red-400"}`}>
+                            {isLong ? "LONG" : "SHORT"}
+                          </td>
+                          <td className="text-right px-2 py-1 text-white tabular-nums">{fmt(pos.entry)}</td>
+                          <td className="text-right px-2 py-1 text-emerald-400 tabular-nums">{fmt(pos.target)}</td>
+                          <td className="text-right px-2 py-1 text-red-400 tabular-nums">{fmt(pos.stop)}</td>
+                          <td className="text-right px-2 py-1 text-gray-400 tabular-nums">{rr}</td>
+                          <td className={`text-right px-2 py-1 tabular-nums font-medium ${pnlPct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
+                          </td>
+                          <td className="px-2 py-1">
+                            <button
+                              onClick={() => setDrawings(prev => prev.filter(d => d.id !== pos.id))}
+                              className="text-gray-600 hover:text-red-400 transition"
+                              title="Position entfernen"
+                            >
+                              <IconX className="h-2.5 w-2.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </div>
