@@ -15,8 +15,11 @@ export async function GET() {
   const addr = user?.wallet_address?.toLowerCase();
   if (!addr) return NextResponse.json({ error: "keine wallet_address in DB", user });
 
+  const bscKey = process.env.BSCSCAN_API_KEY ?? "";
+  const ethKey = process.env.ETHERSCAN_API_KEY ?? "";
+
   // Check BSC directly
-  const bscUrl = `https://api.bscscan.com/api?module=account&action=tokentx&contractaddress=0x55d398326f99059fF775485246999027B3197955&address=${addr}&sort=desc&page=1&offset=20`;
+  const bscUrl = `https://api.bscscan.com/api?module=account&action=tokentx&contractaddress=0x55d398326f99059fF775485246999027B3197955&address=${addr}&sort=desc&page=1&offset=20${bscKey ? `&apikey=${bscKey}` : ""}`;
   const bscRes = await fetch(bscUrl, { cache: "no-store" });
   const bscData = await bscRes.json();
 
@@ -34,6 +37,7 @@ export async function GET() {
   return NextResponse.json({
     wallet_address: addr,
     usdt_wallet: wallet,
+    env_keys: { bsc: bscKey ? `set (${bscKey.length} chars)` : "MISSING", eth: ethKey ? `set (${ethKey.length} chars)` : "MISSING" },
     bsc_status: bscData.status,
     bsc_message: bscData.message,
     total_txns: Array.isArray(bscData.result) ? bscData.result.length : 0,
