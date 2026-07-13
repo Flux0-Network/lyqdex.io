@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   IconStar, IconListDetails, IconChartLine, IconActivity,
-  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft, IconPencil,
+  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft, IconCopy, IconCheck,
 } from "@tabler/icons-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -189,22 +189,20 @@ function TradesWidget({ market, symbol }: { market: MarketMap; symbol: string })
   );
 }
 
-interface WalletRow { id: string; currency: string; balance: string; demo_balance?: string; }
-type AccountMode = "demo" | "real";
+interface WalletRow { id: string; currency: string; balance: string; }
 
 function PortfolioWidget({ market }: { market: MarketMap }) {
   const [wallets, setWallets] = useState<WalletRow[] | null>(null);
   const [supported, setSupported] = useState<string[]>([]);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [walletAddr, setWalletAddr] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
-  const [action, setAction] = useState<{ id: string; currency: string; type: "deposit" | "withdraw" | "set" } | null>(null);
+  const [action, setAction] = useState<{ id: string; currency: string; type: "deposit" | "withdraw" } | null>(null);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [txError, setTxError] = useState("");
-  const [mode, setMode] = useState<AccountMode>("demo");
-
-  const balOf = (w: WalletRow) => parseFloat((mode === "real" ? w.balance : w.demo_balance ?? "0") || "0");
+  const [copied, setCopied] = useState(false);
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
@@ -213,6 +211,9 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
       .catch(() => setAuthed(false));
   }, []);
   useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.user?.wallet_address) setWalletAddr(d.user.wallet_address); });
+  }, []);
 
   async function createWallet(cur: string) {
     setCreating(cur);
@@ -228,7 +229,7 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
     } finally { setCreating(null); }
   }
 
-  function openAction(id: string, currency: string, type: "deposit" | "withdraw" | "set") {
+  function openAction(id: string, currency: string, type: "deposit" | "withdraw") {
     setTxError("");
     setAmount("");
     setAction(prev => (prev && prev.id === id && prev.type === type ? null : { id, currency, type }));
@@ -237,14 +238,13 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   async function submitAction() {
     if (!action) return;
     const amt = parseFloat(amount);
-    const minOk = action.type === "set" ? amt >= 0 : amt > 0;
-    if (!isFinite(amt) || !minOk) { setTxError(action.type === "set" ? "Betrag darf nicht negativ sein." : "Betrag muss größer als 0 sein."); return; }
+    if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
     setBusy(true);
     setTxError("");
     try {
       const res = await fetch("/api/wallet/transaction", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type, mode }),
+        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type }),
       });
       const d = await res.json();
       if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
@@ -254,6 +254,11 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
     } catch {
       setTxError("Fehler bei der Transaktion.");
     } finally { setBusy(false); }
+  }
+
+  function copyAddr() {
+    if (!walletAddr) return;
+    navigator.clipboard.writeText(walletAddr).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
   if (authed === false) {
@@ -268,36 +273,15 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   if (!wallets) return <div className="text-gray-600 text-xs py-6 text-center">Lade…</div>;
 
   const priceOf = (cur: string) => cur === "USDT" ? 1 : parseFloat(market[`${cur}USDT`]?.ticker?.price ?? "0");
+  const balOf = (w: WalletRow) => parseFloat(w.balance || "0");
   const total = wallets.reduce((s, w) => s + balOf(w) * priceOf(w.currency), 0);
   const available = supported.filter(c => !wallets.some(w => w.currency === c));
 
   return (
     <div>
-      {/* Demo / Real switch */}
-      <div className="flex items-center gap-1 mb-3 p-0.5 rounded-lg bg-white/[0.04] w-max">
-        {(["demo", "real"] as AccountMode[]).map(m => (
-          <button
-            key={m}
-            onClick={() => { setMode(m); setAction(null); }}
-            className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition ${
-              mode === m
-                ? (m === "demo" ? "bg-amber-500/20 text-amber-300" : "bg-emerald-500/20 text-emerald-300")
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            {m === "demo" ? "Demo" : "Real"}
-          </button>
-        ))}
-      </div>
-
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="text-[9px] uppercase tracking-widest text-gray-600 flex items-center gap-1">
-            Gesamtwert
-            <span className={`px-1 py-px rounded text-[8px] ${mode === "demo" ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}>
-              {mode === "demo" ? "DEMO" : "REAL"}
-            </span>
-          </div>
+          <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
           <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
         </div>
         {available.length > 0 && (
@@ -309,6 +293,19 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
           </button>
         )}
       </div>
+
+      {walletAddr && (
+        <div className="mb-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-1.5">Deine USDT-Adresse (TRC-20 / ERC-20)</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-gray-300 font-mono truncate flex-1">{walletAddr}</span>
+            <button onClick={copyAddr} className="shrink-0 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition">
+              {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
+              {copied ? "Kopiert" : "Kopieren"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <div className="grid grid-cols-4 gap-1.5 mb-3 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
@@ -352,15 +349,24 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
                       <IconArrowUpRight className="h-2.5 w-2.5" />
                     </button>
                   </span>
-                  {mode === "demo" && (
-                    <button onClick={() => openAction(w.id, w.currency, "set")} title="Demo-Guthaben setzen" className={`h-4 w-4 rounded flex items-center justify-center border transition ${open && action?.type === "set" ? "border-amber-500/50 text-amber-400 bg-amber-500/10" : "border-white/10 text-gray-500 hover:text-amber-400 hover:border-amber-500/40"}`}>
-                      <IconPencil className="h-2.5 w-2.5" />
-                    </button>
-                  )}
                 </span>
               </div>
 
-              {open && (
+              {open && action?.type === "deposit" && (
+                <div className="mt-1.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                  <p className="text-[10px] text-emerald-400/80 mb-1">Sende {w.currency} an deine Wallet-Adresse oben. Nach Eingang wird dein Guthaben automatisch aktualisiert.</p>
+                  {walletAddr && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-400 font-mono truncate flex-1">{walletAddr}</span>
+                      <button onClick={copyAddr} className="shrink-0 text-[10px] text-gray-500 hover:text-white transition">
+                        {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {open && action?.type === "withdraw" && (
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <input
                     type="number"
@@ -369,19 +375,15 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") submitAction(); if (e.key === "Escape") setAction(null); }}
-                    placeholder={action?.type === "set" ? `Demo-Guthaben ${w.currency}` : `Betrag ${w.currency}`}
+                    placeholder={`Betrag ${w.currency}`}
                     className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50"
                   />
                   <button
                     onClick={submitAction}
                     disabled={busy}
-                    className={`text-[11px] px-2.5 py-1 rounded font-medium transition disabled:opacity-40 whitespace-nowrap ${
-                      action?.type === "deposit" ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                      : action?.type === "withdraw" ? "bg-red-600 hover:bg-red-500 text-white"
-                      : "bg-amber-600 hover:bg-amber-500 text-white"
-                    }`}
+                    className="text-[11px] px-2.5 py-1 rounded font-medium transition disabled:opacity-40 whitespace-nowrap bg-red-600 hover:bg-red-500 text-white"
                   >
-                    {busy ? "…" : action?.type === "deposit" ? "Einzahlen" : action?.type === "withdraw" ? "Auszahlen" : "Setzen"}
+                    {busy ? "…" : "Auszahlen"}
                   </button>
                 </div>
               )}
