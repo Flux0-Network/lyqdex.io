@@ -205,6 +205,7 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [txError, setTxError] = useState("");
+  const [syncStatus, setSyncStatus] = useState<"idle" | "checking" | "credited">("idle");
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
@@ -217,6 +218,27 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
       .catch(() => setAuthed(false));
   }, []);
   useEffect(() => { reload(); }, [reload]);
+
+  // Auto-check for deposits every 30s
+  useEffect(() => {
+    async function checkDeposits() {
+      setSyncStatus("checking");
+      try {
+        const res = await fetch("/api/wallet/sync", { method: "POST" });
+        const d = await res.json();
+        if (d.credited > 0) {
+          setSyncStatus("credited");
+          reload();
+          setTimeout(() => setSyncStatus("idle"), 5000);
+        } else {
+          setSyncStatus("idle");
+        }
+      } catch { setSyncStatus("idle"); }
+    }
+    checkDeposits();
+    const iv = setInterval(checkDeposits, 30_000);
+    return () => clearInterval(iv);
+  }, [reload]);
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
       if (d?.user?.wallet_address) setWalletAddr(d.user.wallet_address);
@@ -273,7 +295,11 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
       {/* Balance */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-0.5">USDT Balance</div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="text-[9px] uppercase tracking-widest text-gray-600">USDT Balance</div>
+            {syncStatus === "checking" && <span className="text-[9px] text-gray-600 animate-pulse">prüfe…</span>}
+            {syncStatus === "credited" && <span className="text-[9px] text-emerald-400">✓ Einzahlung erkannt</span>}
+          </div>
           <div className="text-2xl font-bold text-white tabular-nums">${fmtPrice(balance)}</div>
         </div>
         <button

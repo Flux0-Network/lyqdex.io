@@ -1,5 +1,17 @@
 -- Run this in Supabase SQL Editor
 
+-- Deposit-Tracking (verhindert doppelte Gutschriften)
+CREATE TABLE IF NOT EXISTS deposit_txns (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  tx_hash text NOT NULL,
+  currency text NOT NULL DEFAULT 'USDT',
+  amount numeric NOT NULL,
+  network text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(tx_hash, network)
+);
+
 -- Leverage-Positionen
 CREATE TABLE IF NOT EXISTS positions (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
