@@ -5,7 +5,7 @@ import { IconCheck, IconAlertTriangle } from "@tabler/icons-react";
 
 const LEVERAGES = [1, 2, 5, 10, 20, 50, 100];
 
-export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC" }: { symbol?: string; base?: string; mode?: "demo" | "real" }) {
+export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC" }: { symbol?: string; base?: string }) {
   const [side, setSide] = useState<"long" | "short">("long");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [price, setPrice] = useState("");

@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
 
   const { data: wallet, error } = await supabase
     .from("wallets")
-    .insert({ user_id: session.id, currency: currency.toUpperCase(), balance: 0, demo_balance: 0 })
-    .select("id, currency, balance, demo_balance, created_at")
+    .insert({ user_id: session.id, currency: currency.toUpperCase(), balance: 0 })
+    .select("id, currency, balance, created_at")
     .single();
 
   if (error || !wallet) {
