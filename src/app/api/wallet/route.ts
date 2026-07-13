@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
-export const SUPPORTED_CURRENCIES = [
-  "USDT", "BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "ADA",
-  "AVAX", "DOT", "MATIC", "LINK", "LTC", "UNI", "ATOM",
-];
+export const SUPPORTED_CURRENCIES = ["USDT"];
 
 export async function GET() {
   const session = await getSession();
@@ -17,7 +14,7 @@ export async function GET() {
     .from("wallets")
     .select("id, currency, balance, created_at")
     .eq("user_id", session.id)
-    .order("currency");
+    .eq("currency", "USDT");
 
   return NextResponse.json({
     wallets: wallets || [],
