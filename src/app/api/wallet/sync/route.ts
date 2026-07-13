@@ -21,17 +21,19 @@ export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
-  const { data: user } = await supabase
+  const { data: user, error: userErr } = await supabase
     .from("users")
     .select("wallet_address")
     .eq("id", session.id)
     .single();
 
-  if (!user?.wallet_address) return NextResponse.json({ credited: 0, txns: [] });
+  if (userErr) return NextResponse.json({ error: "DB-Fehler: " + userErr.message }, { status: 500 });
+  if (!user?.wallet_address) return NextResponse.json({ credited: 0, txns: [], debug: "keine wallet_address in DB" });
 
   const addr = user.wallet_address.toLowerCase();
   let totalCredited = 0;
   const newTxns: string[] = [];
+  const debugLog: string[] = [`addr=${addr}`];
 
   for (const net of NETWORKS) {
     try {
@@ -39,43 +41,56 @@ export async function POST() {
       const url = `${net.api}?module=account&action=tokentx&contractaddress=${net.contract}&address=${addr}&sort=desc&page=1&offset=20${apiKey ? `&apikey=${apiKey}` : ""}`;
       const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
+      debugLog.push(`${net.id}: status=${data.status}, results=${Array.isArray(data.result) ? data.result.length : data.message}`);
       if (data.status !== "1" || !Array.isArray(data.result)) continue;
 
       const incoming = data.result.filter(
         (t: { to: string; confirmations: string }) =>
           t.to.toLowerCase() === addr && parseInt(t.confirmations) >= 6
       );
+      debugLog.push(`${net.id}: ${incoming.length} incoming with >=6 confirmations`);
 
       for (const tx of incoming) {
         const amount = parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal) || 6);
         if (amount <= 0) continue;
 
-        // Skip if already processed
-        const { data: existing } = await supabase
+        const { data: existing, error: existErr } = await supabase
           .from("deposit_txns")
           .select("id")
           .eq("tx_hash", tx.hash)
           .eq("network", net.id)
           .maybeSingle();
-        if (existing) continue;
 
-        // Credit USDT wallet
+        if (existErr) {
+          // Table might not exist yet — skip dedup, still credit
+          debugLog.push(`deposit_txns error: ${existErr.message}`);
+        } else if (existing) {
+          debugLog.push(`tx ${tx.hash.slice(0, 10)} already credited`);
+          continue;
+        }
+
         const { data: wallet } = await supabase
           .from("wallets")
           .select("id, balance")
           .eq("user_id", session.id)
           .eq("currency", "USDT")
           .maybeSingle();
-        if (!wallet) continue;
+        if (!wallet) { debugLog.push("no USDT wallet found"); continue; }
 
         await supabase.from("wallets").update({ balance: parseFloat(wallet.balance || "0") + amount }).eq("id", wallet.id);
-        await supabase.from("deposit_txns").insert({ user_id: session.id, tx_hash: tx.hash, currency: "USDT", amount, network: net.id });
+
+        if (!existErr) {
+          await supabase.from("deposit_txns").insert({ user_id: session.id, tx_hash: tx.hash, currency: "USDT", amount, network: net.id });
+        }
 
         totalCredited += amount;
         newTxns.push(tx.hash);
+        debugLog.push(`credited ${amount} USDT`);
       }
-    } catch { /* skip network error */ }
+    } catch (e) {
+      debugLog.push(`${net.id} exception: ${e}`);
+    }
   }
 
-  return NextResponse.json({ credited: totalCredited, txns: newTxns });
+  return NextResponse.json({ credited: totalCredited, txns: newTxns, debug: debugLog });
 }
