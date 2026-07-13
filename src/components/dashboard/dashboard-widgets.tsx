@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   IconStar, IconListDetails, IconChartLine, IconActivity,
-  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft, IconCopy, IconCheck, IconRefresh,
+  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft, IconCopy, IconCheck,
 } from "@tabler/icons-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -203,8 +203,6 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   const [busy, setBusy] = useState(false);
   const [txError, setTxError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState("");
   const [solAddr, setSolAddr] = useState<string | null>(null);
   const [showSolInput, setShowSolInput] = useState(false);
   const [solInput, setSolInput] = useState("");
@@ -286,25 +284,6 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
     navigator.clipboard.writeText(walletAddr).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
-  async function syncDeposits() {
-    setSyncing(true);
-    setSyncMsg("");
-    try {
-      const res = await fetch("/api/wallet/sync", { method: "POST" });
-      const d = await res.json();
-      if (d.credited > 0) {
-        setSyncMsg(`+${d.credited.toFixed(2)} USDT gutgeschrieben`);
-        reload();
-      } else {
-        setSyncMsg("Keine neuen Einzahlungen");
-      }
-      setTimeout(() => setSyncMsg(""), 4000);
-    } catch {
-      setSyncMsg("Sync fehlgeschlagen");
-    } finally {
-      setSyncing(false);
-    }
-  }
 
   if (authed === false) {
     return (
@@ -329,31 +308,15 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
           <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
           <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
         </div>
-        <div className="flex items-center gap-1.5">
+        {available.length > 0 && (
           <button
-            onClick={syncDeposits}
-            disabled={syncing}
-            title="Einzahlungen prüfen"
-            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition disabled:opacity-40"
+            onClick={() => setShowAdd(o => !o)}
+            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition"
           >
-            <IconRefresh className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "…" : "Sync"}
+            <IconWallet className="h-3 w-3" /> {showAdd ? "Schließen" : "Wallet +"}
           </button>
-          {available.length > 0 && (
-            <button
-              onClick={() => setShowAdd(o => !o)}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition"
-            >
-              <IconWallet className="h-3 w-3" /> {showAdd ? "Schließen" : "Wallet +"}
-            </button>
-          )}
-        </div>
+        )}
       </div>
-      {syncMsg && (
-        <div className={`text-[10px] mb-2 px-2 py-1 rounded ${syncMsg.startsWith("+") ? "text-emerald-400 bg-emerald-500/10" : "text-gray-500 bg-white/[0.03]"}`}>
-          {syncMsg}
-        </div>
-      )}
 
       {walletAddr && (
         <div className="mb-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
