@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id, wallet_address, created_at")
+    .select("id, wallet_address, solana_address, created_at")
     .eq("id", session.id)
     .single();
 

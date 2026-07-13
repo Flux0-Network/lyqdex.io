@@ -205,6 +205,10 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
+  const [solAddr, setSolAddr] = useState<string | null>(null);
+  const [showSolInput, setShowSolInput] = useState(false);
+  const [solInput, setSolInput] = useState("");
+  const [savingSol, setSavingSol] = useState(false);
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
@@ -214,8 +218,27 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
   }, []);
   useEffect(() => { reload(); }, [reload]);
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.user?.wallet_address) setWalletAddr(d.user.wallet_address); });
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.user?.wallet_address) setWalletAddr(d.user.wallet_address);
+      if (d?.user?.solana_address) setSolAddr(d.user.solana_address);
+    });
   }, []);
+
+  async function saveSolAddr() {
+    setSavingSol(true);
+    try {
+      const res = await fetch("/api/auth/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ solana_address: solInput.trim() }),
+      });
+      if (res.ok) {
+        setSolAddr(solInput.trim() || null);
+        setShowSolInput(false);
+        setSolInput("");
+      }
+    } finally { setSavingSol(false); }
+  }
 
   async function createWallet(cur: string) {
     setCreating(cur);
@@ -333,8 +356,8 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
       )}
 
       {walletAddr && (
-        <div className="mb-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-1.5">Deine USDT-Adresse (TRC-20 / ERC-20)</div>
+        <div className="mb-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-1.5">ERC-20 / BEP-20 USDT</div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-gray-300 font-mono truncate flex-1">{walletAddr}</span>
             <button onClick={copyAddr} className="shrink-0 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition">
@@ -344,6 +367,38 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
           </div>
         </div>
       )}
+
+      {/* Solana (Phantom) address */}
+      <div className="mb-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[9px] uppercase tracking-widest text-gray-600">Solana (Phantom) USDT</div>
+          <button
+            onClick={() => { setShowSolInput(o => !o); setSolInput(solAddr ?? ""); }}
+            className="text-[10px] text-gray-500 hover:text-white transition"
+          >
+            {solAddr ? "Ändern" : "+ Hinzufügen"}
+          </button>
+        </div>
+        {showSolInput ? (
+          <div className="flex items-center gap-1.5 mt-1">
+            <input
+              autoFocus
+              value={solInput}
+              onChange={e => setSolInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") saveSolAddr(); if (e.key === "Escape") setShowSolInput(false); }}
+              placeholder="Phantom-Adresse einfügen…"
+              className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-gray-600 font-mono focus:outline-none focus:border-violet-500/50"
+            />
+            <button onClick={saveSolAddr} disabled={savingSol} className="shrink-0 text-[10px] px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white transition disabled:opacity-40">
+              {savingSol ? "…" : "OK"}
+            </button>
+          </div>
+        ) : solAddr ? (
+          <span className="text-[11px] text-gray-300 font-mono truncate block">{solAddr}</span>
+        ) : (
+          <span className="text-[11px] text-gray-600">Noch keine Solana-Adresse hinterlegt</span>
+        )}
+      </div>
 
       {showAdd && (
         <div className="grid grid-cols-4 gap-1.5 mb-3 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
