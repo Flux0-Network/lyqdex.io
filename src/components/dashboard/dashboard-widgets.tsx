@@ -195,16 +195,18 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [walletId, setWalletId] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [walletAddr, setWalletAddr] = useState<string | null>(null);
   const [solAddr, setSolAddr] = useState<string | null>(null);
   const [showSolInput, setShowSolInput] = useState(false);
   const [solInput, setSolInput] = useState("");
   const [savingSol, setSavingSol] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAddr, setWithdrawAddr] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [txError, setTxError] = useState("");
+  const [txHash, setTxHash] = useState("");
+  const PLATFORM_DEPOSIT_ADDR = "0xa4F3F3b4934137C3FaB6Bf9111b5EAb017822C1C";
   const [syncStatus, setSyncStatus] = useState<"idle" | "checking" | "credited">("idle");
 
   const reload = useCallback(() => {
@@ -241,14 +243,12 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
   }, [reload]);
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.user?.wallet_address) setWalletAddr(d.user.wallet_address);
       if (d?.user?.solana_address) setSolAddr(d.user.solana_address);
     });
   }, []);
 
   function copyAddr() {
-    if (!walletAddr) return;
-    navigator.clipboard.writeText(walletAddr).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    navigator.clipboard.writeText(PLATFORM_DEPOSIT_ADDR).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
   async function saveSolAddr() {
@@ -263,19 +263,20 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
   }
 
   async function withdraw() {
-    if (!walletId) return;
     const amt = parseFloat(amount);
     if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
-    setBusy(true); setTxError("");
+    if (!/^0x[0-9a-fA-F]{40}$/.test(withdrawAddr)) { setTxError("Ungültige BSC-Adresse (0x...)"); return; }
+    setBusy(true); setTxError(""); setTxHash("");
     try {
-      const res = await fetch("/api/wallet/transaction", {
+      const res = await fetch("/api/wallet/withdraw", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency: "USDT", amount: amt, type: "withdraw" }),
+        body: JSON.stringify({ amount: amt, address: withdrawAddr }),
       });
       const d = await res.json();
       if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
-      setBalance(parseFloat(d.wallet.balance || "0"));
-      setShowWithdraw(false); setAmount("");
+      setTxHash(d.txHash);
+      reload();
+      setAmount(""); setWithdrawAddr("");
     } catch { setTxError("Fehler."); } finally { setBusy(false); }
   }
 
@@ -311,36 +312,41 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
       </div>
 
       {showWithdraw && (
-        <div>
+        <div className="space-y-1.5">
+          <input
+            type="text" autoFocus
+            value={withdrawAddr} onChange={e => { setWithdrawAddr(e.target.value); setTxError(""); }}
+            placeholder="BSC-Adresse (0x...)"
+            className="w-full bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-gray-600 font-mono focus:outline-none focus:border-red-500/50"
+          />
           <div className="flex items-center gap-1.5">
             <input
-              type="number" inputMode="decimal" autoFocus
+              type="number" inputMode="decimal"
               value={amount} onChange={e => { setAmount(e.target.value); setTxError(""); }}
               onKeyDown={e => { if (e.key === "Enter") withdraw(); if (e.key === "Escape") setShowWithdraw(false); }}
               placeholder="Betrag USDT"
               className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/50"
             />
             <button onClick={withdraw} disabled={busy} className="text-[11px] px-2.5 py-1.5 rounded font-medium bg-red-600 hover:bg-red-500 text-white transition disabled:opacity-40">
-              {busy ? "…" : "OK"}
+              {busy ? "…" : "Senden"}
             </button>
           </div>
-          {txError && <p className="text-[10px] text-red-400 mt-1">{txError}</p>}
+          {txError && <p className="text-[10px] text-red-400">{txError}</p>}
+          {txHash && <p className="text-[10px] text-emerald-400 break-all">✓ Gesendet: {txHash}</p>}
         </div>
       )}
 
-      {/* ERC-20 deposit address */}
-      {walletAddr && (
-        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · ERC-20 / BEP-20</div>
-            <button onClick={copyAddr} className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition">
-              {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
-              {copied ? "Kopiert" : "Kopieren"}
-            </button>
-          </div>
-          <span className="text-[11px] text-gray-400 font-mono break-all">{walletAddr}</span>
+      {/* Platform deposit address */}
+      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · BEP-20 (BSC)</div>
+          <button onClick={copyAddr} className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition">
+            {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
+            {copied ? "Kopiert" : "Kopieren"}
+          </button>
         </div>
-      )}
+        <span className="text-[11px] text-gray-400 font-mono break-all">{PLATFORM_DEPOSIT_ADDR}</span>
+      </div>
 
       {/* Solana address */}
       <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">

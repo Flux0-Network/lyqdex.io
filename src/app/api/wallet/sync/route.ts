@@ -1,96 +1,72 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { PLATFORM_ADDRESS } from "@/lib/platform-wallet";
 
-const NETWORKS = [
-  {
-    id: "bsc",
-    contract: "0x55d398326f99059fF775485246999027B3197955",
-    api: "https://api.bscscan.com/api",
-    envKey: "BSCSCAN_API_KEY",
-  },
-  {
-    id: "eth",
-    contract: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    api: "https://api.etherscan.io/api",
-    envKey: "ETHERSCAN_API_KEY",
-  },
-];
+const USDT_BSC = "0x55d398326f99059fF775485246999027B3197955";
+const BSC_API = "https://api.bscscan.com/api";
 
 export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
-  const { data: user, error: userErr } = await supabase
-    .from("users")
-    .select("wallet_address")
-    .eq("id", session.id)
-    .single();
-
-  if (userErr) return NextResponse.json({ error: "DB-Fehler: " + userErr.message }, { status: 500 });
-  if (!user?.wallet_address) return NextResponse.json({ credited: 0, txns: [], debug: "keine wallet_address in DB" });
-
-  const addr = user.wallet_address.toLowerCase();
+  const addr = PLATFORM_ADDRESS.toLowerCase();
+  const apiKey = process.env.BSCSCAN_API_KEY ?? "";
   let totalCredited = 0;
   const newTxns: string[] = [];
-  const debugLog: string[] = [`addr=${addr}`];
 
-  for (const net of NETWORKS) {
-    try {
-      const apiKey = process.env[net.envKey] ?? "";
-      const url = `${net.api}?module=account&action=tokentx&contractaddress=${net.contract}&address=${addr}&sort=desc&page=1&offset=20${apiKey ? `&apikey=${apiKey}` : ""}`;
-      const res = await fetch(url, { cache: "no-store" });
-      const data = await res.json();
-      debugLog.push(`${net.id}: status=${data.status}, results=${Array.isArray(data.result) ? data.result.length : data.message}`);
-      if (data.status !== "1" || !Array.isArray(data.result)) continue;
-
-      const incoming = data.result.filter(
-        (t: { to: string; confirmations: string }) =>
-          t.to.toLowerCase() === addr && parseInt(t.confirmations) >= 6
-      );
-      debugLog.push(`${net.id}: ${incoming.length} incoming with >=6 confirmations`);
-
-      for (const tx of incoming) {
-        const amount = parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal) || 6);
-        if (amount <= 0) continue;
-
-        const { data: existing, error: existErr } = await supabase
-          .from("deposit_txns")
-          .select("id")
-          .eq("tx_hash", tx.hash)
-          .eq("network", net.id)
-          .maybeSingle();
-
-        if (existErr) {
-          // Table might not exist yet — skip dedup, still credit
-          debugLog.push(`deposit_txns error: ${existErr.message}`);
-        } else if (existing) {
-          debugLog.push(`tx ${tx.hash.slice(0, 10)} already credited`);
-          continue;
-        }
-
-        const { data: wallet } = await supabase
-          .from("wallets")
-          .select("id, balance")
-          .eq("user_id", session.id)
-          .eq("currency", "USDT")
-          .maybeSingle();
-        if (!wallet) { debugLog.push("no USDT wallet found"); continue; }
-
-        await supabase.from("wallets").update({ balance: parseFloat(wallet.balance || "0") + amount }).eq("id", wallet.id);
-
-        if (!existErr) {
-          await supabase.from("deposit_txns").insert({ user_id: session.id, tx_hash: tx.hash, currency: "USDT", amount, network: net.id });
-        }
-
-        totalCredited += amount;
-        newTxns.push(tx.hash);
-        debugLog.push(`credited ${amount} USDT`);
-      }
-    } catch (e) {
-      debugLog.push(`${net.id} exception: ${e}`);
+  try {
+    const url = `${BSC_API}?module=account&action=tokentx&contractaddress=${USDT_BSC}&address=${addr}&sort=desc&page=1&offset=50${apiKey ? `&apikey=${apiKey}` : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    const data = await res.json();
+    if (data.status !== "1" || !Array.isArray(data.result)) {
+      return NextResponse.json({ credited: 0, txns: [], debug: data.message });
     }
+
+    // Each incoming tx — identify which user sent it by matching from-address to users.wallet_address
+    const incoming = data.result.filter(
+      (t: { to: string; confirmations: string }) =>
+        t.to.toLowerCase() === addr && parseInt(t.confirmations) >= 6
+    );
+
+    for (const tx of incoming) {
+      const amount = parseInt(tx.value) / 1e18;
+      if (amount <= 0) continue;
+
+      const { data: existing } = await supabase
+        .from("deposit_txns")
+        .select("id")
+        .eq("tx_hash", tx.hash)
+        .eq("network", "bsc")
+        .maybeSingle();
+      if (existing) continue;
+
+      // Find user by from-address
+      const { data: user } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", tx.from)
+        .maybeSingle();
+
+      const userId = user?.id ?? session.id;
+
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("id, balance")
+        .eq("user_id", userId)
+        .eq("currency", "USDT")
+        .maybeSingle();
+      if (!wallet) continue;
+
+      await supabase.from("wallets").update({ balance: parseFloat(wallet.balance || "0") + amount }).eq("id", wallet.id);
+      await supabase.from("deposit_txns").insert({ user_id: userId, tx_hash: tx.hash, currency: "USDT", amount, network: "bsc" });
+
+      totalCredited += amount;
+      newTxns.push(tx.hash);
+    }
+  } catch (e) {
+    return NextResponse.json({ credited: 0, txns: [], debug: String(e) });
   }
 
-  return NextResponse.json({ credited: totalCredited, txns: newTxns, debug: debugLog });
+  return NextResponse.json({ credited: totalCredited, txns: newTxns });
 }
