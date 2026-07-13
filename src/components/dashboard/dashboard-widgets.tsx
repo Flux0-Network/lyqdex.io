@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   IconStar, IconListDetails, IconChartLine, IconActivity,
-  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconArrowDownLeft, IconCopy, IconCheck,
+  IconWallet, IconTrendingUp, IconTrendingDown, IconArrowUpRight, IconArrowDownRight, IconCopy, IconCheck,
 } from "@tabler/icons-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -191,27 +191,29 @@ function TradesWidget({ market, symbol }: { market: MarketMap; symbol: string })
 
 interface WalletRow { id: string; currency: string; balance: string; }
 
-function PortfolioWidget({ market }: { market: MarketMap }) {
-  const [wallets, setWallets] = useState<WalletRow[] | null>(null);
-  const [supported, setSupported] = useState<string[]>([]);
+function PortfolioWidget({ market: _market }: { market: MarketMap }) {
+  const [balance, setBalance] = useState<number | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [creating, setCreating] = useState<string | null>(null);
-  const [action, setAction] = useState<{ id: string; currency: string; type: "deposit" | "withdraw" } | null>(null);
-  const [amount, setAmount] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [txError, setTxError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [solAddr, setSolAddr] = useState<string | null>(null);
   const [showSolInput, setShowSolInput] = useState(false);
   const [solInput, setSolInput] = useState("");
   const [savingSol, setSavingSol] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [txError, setTxError] = useState("");
 
   const reload = useCallback(() => {
     fetch("/api/wallet")
       .then(r => { if (r.status === 401) { setAuthed(false); return null; } setAuthed(true); return r.json(); })
-      .then(d => { if (d) { setWallets(d.wallets ?? []); setSupported(d.supported ?? []); } })
+      .then(d => {
+        const usdt = d?.wallets?.find((w: WalletRow) => w.currency === "USDT");
+        setBalance(parseFloat(usdt?.balance || "0"));
+        setWalletId(usdt?.id ?? null);
+      })
       .catch(() => setAuthed(false));
   }, []);
   useEffect(() => { reload(); }, [reload]);
@@ -222,68 +224,38 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
     });
   }, []);
 
-  async function saveSolAddr() {
-    setSavingSol(true);
-    try {
-      const res = await fetch("/api/auth/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ solana_address: solInput.trim() }),
-      });
-      if (res.ok) {
-        setSolAddr(solInput.trim() || null);
-        setShowSolInput(false);
-        setSolInput("");
-      }
-    } finally { setSavingSol(false); }
-  }
-
-  async function createWallet(cur: string) {
-    setCreating(cur);
-    try {
-      const res = await fetch("/api/wallet/create", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency: cur }),
-      });
-      if (res.ok) {
-        const d = await res.json();
-        setWallets(prev => [...(prev ?? []), d.wallet].sort((a, b) => a.currency.localeCompare(b.currency)));
-        setShowAdd(false);
-      }
-    } finally { setCreating(null); }
-  }
-
-  function openAction(id: string, currency: string, type: "deposit" | "withdraw") {
-    setTxError("");
-    setAmount("");
-    setAction(prev => (prev && prev.id === id && prev.type === type ? null : { id, currency, type }));
-  }
-
-  async function submitAction() {
-    if (!action) return;
-    const amt = parseFloat(amount);
-    if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
-    setBusy(true);
-    setTxError("");
-    try {
-      const res = await fetch("/api/wallet/transaction", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency: action.currency, amount: amt, type: action.type }),
-      });
-      const d = await res.json();
-      if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
-      setWallets(prev => (prev ?? []).map(w => w.id === d.wallet.id ? d.wallet : w));
-      setAction(null);
-      setAmount("");
-    } catch {
-      setTxError("Fehler bei der Transaktion.");
-    } finally { setBusy(false); }
-  }
-
   function copyAddr() {
     if (!walletAddr) return;
     navigator.clipboard.writeText(walletAddr).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
+  async function saveSolAddr() {
+    setSavingSol(true);
+    try {
+      const res = await fetch("/api/auth/settings", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ solana_address: solInput.trim() }),
+      });
+      if (res.ok) { setSolAddr(solInput.trim() || null); setShowSolInput(false); setSolInput(""); }
+    } finally { setSavingSol(false); }
+  }
+
+  async function withdraw() {
+    if (!walletId) return;
+    const amt = parseFloat(amount);
+    if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
+    setBusy(true); setTxError("");
+    try {
+      const res = await fetch("/api/wallet/transaction", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency: "USDT", amount: amt, type: "withdraw" }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
+      setBalance(parseFloat(d.wallet.balance || "0"));
+      setShowWithdraw(false); setAmount("");
+    } catch { setTxError("Fehler."); } finally { setBusy(false); }
+  }
 
   if (authed === false) {
     return (
@@ -294,62 +266,69 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
       </div>
     );
   }
-  if (!wallets) return <div className="text-gray-600 text-xs py-6 text-center">Lade…</div>;
-
-  const priceOf = (cur: string) => cur === "USDT" ? 1 : parseFloat(market[`${cur}USDT`]?.ticker?.price ?? "0");
-  const balOf = (w: WalletRow) => parseFloat(w.balance || "0");
-  const total = wallets.reduce((s, w) => s + balOf(w) * priceOf(w.currency), 0);
-  const available = supported.filter(c => !wallets.some(w => w.currency === c));
+  if (balance === null) return <div className="text-gray-600 text-xs py-6 text-center">Lade…</div>;
 
   return (
-    <div>
-      <div className="flex items-start justify-between mb-3">
+    <div className="space-y-3">
+      {/* Balance */}
+      <div className="flex items-center justify-between">
         <div>
-          <div className="text-[9px] uppercase tracking-widest text-gray-600">Gesamtwert</div>
-          <div className="text-xl font-bold text-white tabular-nums">${fmtPrice(total)}</div>
+          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-0.5">USDT Balance</div>
+          <div className="text-2xl font-bold text-white tabular-nums">${fmtPrice(balance)}</div>
         </div>
-        {available.length > 0 && (
-          <button
-            onClick={() => setShowAdd(o => !o)}
-            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition"
-          >
-            <IconWallet className="h-3 w-3" /> {showAdd ? "Schließen" : "Wallet +"}
-          </button>
-        )}
+        <button
+          onClick={() => { setShowWithdraw(o => !o); setTxError(""); setAmount(""); }}
+          className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition ${showWithdraw ? "border-red-500/40 text-red-400 bg-red-500/10" : "border-white/10 text-gray-300 hover:text-white hover:border-white/20"}`}
+        >
+          <IconArrowUpRight className="h-3 w-3" /> Auszahlen
+        </button>
       </div>
 
+      {showWithdraw && (
+        <div>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number" inputMode="decimal" autoFocus
+              value={amount} onChange={e => { setAmount(e.target.value); setTxError(""); }}
+              onKeyDown={e => { if (e.key === "Enter") withdraw(); if (e.key === "Escape") setShowWithdraw(false); }}
+              placeholder="Betrag USDT"
+              className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/50"
+            />
+            <button onClick={withdraw} disabled={busy} className="text-[11px] px-2.5 py-1.5 rounded font-medium bg-red-600 hover:bg-red-500 text-white transition disabled:opacity-40">
+              {busy ? "…" : "OK"}
+            </button>
+          </div>
+          {txError && <p className="text-[10px] text-red-400 mt-1">{txError}</p>}
+        </div>
+      )}
+
+      {/* ERC-20 deposit address */}
       {walletAddr && (
-        <div className="mb-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-          <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-1.5">ERC-20 / BEP-20 USDT</div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-gray-300 font-mono truncate flex-1">{walletAddr}</span>
-            <button onClick={copyAddr} className="shrink-0 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition">
+        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · ERC-20 / BEP-20</div>
+            <button onClick={copyAddr} className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition">
               {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
               {copied ? "Kopiert" : "Kopieren"}
             </button>
           </div>
+          <span className="text-[11px] text-gray-400 font-mono break-all">{walletAddr}</span>
         </div>
       )}
 
-      {/* Solana (Phantom) address */}
-      <div className="mb-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+      {/* Solana address */}
+      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
         <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[9px] uppercase tracking-widest text-gray-600">Solana (Phantom) USDT</div>
-          <button
-            onClick={() => { setShowSolInput(o => !o); setSolInput(solAddr ?? ""); }}
-            className="text-[10px] text-gray-500 hover:text-white transition"
-          >
+          <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · Solana (Phantom)</div>
+          <button onClick={() => { setShowSolInput(o => !o); setSolInput(solAddr ?? ""); }} className="text-[10px] text-gray-500 hover:text-white transition">
             {solAddr ? "Ändern" : "+ Hinzufügen"}
           </button>
         </div>
         {showSolInput ? (
-          <div className="flex items-center gap-1.5 mt-1">
-            <input
-              autoFocus
-              value={solInput}
-              onChange={e => setSolInput(e.target.value)}
+          <div className="flex items-center gap-1.5">
+            <input autoFocus value={solInput} onChange={e => setSolInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") saveSolAddr(); if (e.key === "Escape") setShowSolInput(false); }}
-              placeholder="Phantom-Adresse einfügen…"
+              placeholder="Phantom-Adresse…"
               className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-gray-600 font-mono focus:outline-none focus:border-violet-500/50"
             />
             <button onClick={saveSolAddr} disabled={savingSol} className="shrink-0 text-[10px] px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white transition disabled:opacity-40">
@@ -357,96 +336,10 @@ function PortfolioWidget({ market }: { market: MarketMap }) {
             </button>
           </div>
         ) : solAddr ? (
-          <span className="text-[11px] text-gray-300 font-mono truncate block">{solAddr}</span>
+          <span className="text-[11px] text-gray-400 font-mono break-all">{solAddr}</span>
         ) : (
-          <span className="text-[11px] text-gray-600">Noch keine Solana-Adresse hinterlegt</span>
+          <span className="text-[11px] text-gray-600">Noch nicht hinterlegt</span>
         )}
-      </div>
-
-      {showAdd && (
-        <div className="grid grid-cols-4 gap-1.5 mb-3 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-          {available.map(cur => (
-            <button
-              key={cur}
-              onClick={() => createWallet(cur)}
-              disabled={!!creating}
-              className="flex flex-col items-center gap-1 py-2 rounded-md border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition disabled:opacity-40"
-            >
-              <span className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: colorOf(`${cur}USDT`) }}>{cur.slice(0, 2)}</span>
-              <span className="text-[10px] text-gray-300">{cur}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="divide-y divide-white/[0.04]">
-        {wallets.length === 0 && <div className="text-gray-600 text-xs py-2">Noch keine Wallets vorhanden — oben rechts eins hinzufügen.</div>}
-        {wallets.map(w => {
-          const bal = balOf(w);
-          const val = bal * priceOf(w.currency);
-          const open = action?.id === w.id;
-          return (
-            <div key={w.id} className="py-1.5">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <span className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: colorOf(`${w.currency}USDT`) }}>{w.currency.slice(0, 2)}</span>
-                  <span className="text-[12px] text-white font-medium">{w.currency}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-right">
-                    <span className="text-[12px] text-gray-200 tabular-nums block leading-tight">{bal.toLocaleString("en-US", { maximumFractionDigits: 6 })}</span>
-                    <span className="text-[10px] text-gray-600 tabular-nums">${fmtPrice(val)}</span>
-                  </span>
-                  <span className="flex flex-col gap-0.5">
-                    <button onClick={() => openAction(w.id, w.currency, "deposit")} title="Einzahlen" className={`h-4 w-4 rounded flex items-center justify-center border transition ${open && action?.type === "deposit" ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" : "border-white/10 text-gray-500 hover:text-emerald-400 hover:border-emerald-500/40"}`}>
-                      <IconArrowDownLeft className="h-2.5 w-2.5" />
-                    </button>
-                    <button onClick={() => openAction(w.id, w.currency, "withdraw")} title="Auszahlen" className={`h-4 w-4 rounded flex items-center justify-center border transition ${open && action?.type === "withdraw" ? "border-red-500/50 text-red-400 bg-red-500/10" : "border-white/10 text-gray-500 hover:text-red-400 hover:border-red-500/40"}`}>
-                      <IconArrowUpRight className="h-2.5 w-2.5" />
-                    </button>
-                  </span>
-                </span>
-              </div>
-
-              {open && action?.type === "deposit" && (
-                <div className="mt-1.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                  <p className="text-[10px] text-emerald-400/80 mb-1">Sende {w.currency} an deine Wallet-Adresse oben. Nach Eingang wird dein Guthaben automatisch aktualisiert.</p>
-                  {walletAddr && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-gray-400 font-mono truncate flex-1">{walletAddr}</span>
-                      <button onClick={copyAddr} className="shrink-0 text-[10px] text-gray-500 hover:text-white transition">
-                        {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {open && action?.type === "withdraw" && (
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    autoFocus
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") submitAction(); if (e.key === "Escape") setAction(null); }}
-                    placeholder={`Betrag ${w.currency}`}
-                    className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50"
-                  />
-                  <button
-                    onClick={submitAction}
-                    disabled={busy}
-                    className="text-[11px] px-2.5 py-1 rounded font-medium transition disabled:opacity-40 whitespace-nowrap bg-red-600 hover:bg-red-500 text-white"
-                  >
-                    {busy ? "…" : "Auszahlen"}
-                  </button>
-                </div>
-              )}
-              {open && txError && <p className="text-[10px] text-red-400 mt-1">{txError}</p>}
-            </div>
-          );
-        })}
       </div>
     </div>
   );
