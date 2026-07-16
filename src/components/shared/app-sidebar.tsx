@@ -50,7 +50,7 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
       </div>
 
       {/* Nav items */}
-      <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center pt-1.5 gap-0.5">
+      <div className="flex-1 w-full border-r border-white/[0.06] flex flex-col items-center pt-1.5 gap-0.5 overflow-y-auto">
         <Nav href="/dashboard"        title="Dashboard"        active={active === "dashboard"}><IconLayoutDashboard className="h-3.5 w-3.5" /></Nav>
         <Nav href="/trade"            title="Chart & Trading"  active={active === "trade"}><IconChartCandle className="h-3.5 w-3.5" /></Nav>
         <Nav href="/portfolio"        title="Portfolio"        active={active === "portfolio"}><IconWallet className="h-3.5 w-3.5" /></Nav>
