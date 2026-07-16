@@ -6,12 +6,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   IconLayoutDashboard, IconChartCandle, IconWallet, IconLogin, IconLogout,
-  IconStar, IconRobot, IconChartBar, IconPencil, IconHelp,
+  IconStar, IconRobot, IconChartBar, IconPencil, IconHelp, IconNews,
 } from "@tabler/icons-react";
 
 export const SIDEBAR_W = 44;
 
-type Active = "dashboard" | "trade" | "portfolio" | "watchlist" | "bots" | "indicators" | "indicator-editor" | "support";
+type Active = "dashboard" | "trade" | "portfolio" | "watchlist" | "bots" | "indicators" | "indicator-editor" | "support" | "news";
 
 function Nav({ href, title, active: on, children }: { href: string; title: string; active: boolean; children: React.ReactNode }) {
   return (
@@ -67,6 +67,7 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
 
         <Divider />
 
+        <Nav href="/news"             title="News"             active={active === "news"}><IconNews className="h-3.5 w-3.5" /></Nav>
         <Nav href="/support"          title="Support"          active={active === "support"}><IconHelp className="h-3.5 w-3.5" /></Nav>
       </div>
 
