@@ -193,98 +193,23 @@ interface WalletRow { id: string; currency: string; balance: string; }
 
 function PortfolioWidget({ market: _market }: { market: MarketMap }) {
   const [balance, setBalance] = useState<number | null>(null);
-  const [walletId, setWalletId] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [solAddr, setSolAddr] = useState<string | null>(null);
-  const [showSolInput, setShowSolInput] = useState(false);
-  const [solInput, setSolInput] = useState("");
-  const [savingSol, setSavingSol] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showWithdraw, setShowWithdraw] = useState(false);
-  const [withdrawAddr, setWithdrawAddr] = useState("");
-  const [amount, setAmount] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [txError, setTxError] = useState("");
-  const [txHash, setTxHash] = useState("");
-  const PLATFORM_DEPOSIT_ADDR = "0xa4F3F3b4934137C3FaB6Bf9111b5EAb017822C1C";
-  const [syncStatus, setSyncStatus] = useState<"idle" | "checking" | "credited">("idle");
 
-  const reload = useCallback(() => {
+  useEffect(() => {
     fetch("/api/wallet")
       .then(r => { if (r.status === 401) { setAuthed(false); return null; } setAuthed(true); return r.json(); })
       .then(d => {
         const usdt = d?.wallets?.find((w: WalletRow) => w.currency === "USDT");
         setBalance(parseFloat(usdt?.balance || "0"));
-        setWalletId(usdt?.id ?? null);
       })
       .catch(() => setAuthed(false));
   }, []);
-  useEffect(() => { reload(); }, [reload]);
-
-  // Auto-check for deposits every 30s
-  useEffect(() => {
-    async function checkDeposits() {
-      setSyncStatus("checking");
-      try {
-        const res = await fetch("/api/wallet/sync", { method: "POST" });
-        const d = await res.json();
-        if (d.credited > 0) {
-          setSyncStatus("credited");
-          reload();
-          setTimeout(() => setSyncStatus("idle"), 5000);
-        } else {
-          setSyncStatus("idle");
-        }
-      } catch { setSyncStatus("idle"); }
-    }
-    checkDeposits();
-    const iv = setInterval(checkDeposits, 30_000);
-    return () => clearInterval(iv);
-  }, [reload]);
-  useEffect(() => {
-    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.user?.solana_address) setSolAddr(d.user.solana_address);
-    });
-  }, []);
-
-  function copyAddr() {
-    navigator.clipboard.writeText(PLATFORM_DEPOSIT_ADDR).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  }
-
-  async function saveSolAddr() {
-    setSavingSol(true);
-    try {
-      const res = await fetch("/api/auth/settings", {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ solana_address: solInput.trim() }),
-      });
-      if (res.ok) { setSolAddr(solInput.trim() || null); setShowSolInput(false); setSolInput(""); }
-    } finally { setSavingSol(false); }
-  }
-
-  async function withdraw() {
-    const amt = parseFloat(amount);
-    if (!isFinite(amt) || amt <= 0) { setTxError("Betrag muss größer als 0 sein."); return; }
-    if (!/^0x[0-9a-fA-F]{40}$/.test(withdrawAddr)) { setTxError("Ungültige BSC-Adresse (0x...)"); return; }
-    setBusy(true); setTxError(""); setTxHash("");
-    try {
-      const res = await fetch("/api/wallet/withdraw", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amt, address: withdrawAddr }),
-      });
-      const d = await res.json();
-      if (!res.ok) { setTxError(d.error ?? "Fehler."); return; }
-      setTxHash(d.txHash);
-      reload();
-      setAmount(""); setWithdrawAddr("");
-    } catch { setTxError("Fehler."); } finally { setBusy(false); }
-  }
 
   if (authed === false) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-4 gap-2">
         <IconWallet className="h-6 w-6 text-gray-600" />
-        <p className="text-[12px] text-gray-500">Melde dich an, um dein Wallet zu sehen.</p>
+        <p className="text-[12px] text-gray-500">Melde dich an.</p>
         <Link href="/login" className="text-[12px] text-violet-400 hover:text-violet-300">Anmelden →</Link>
       </div>
     );
@@ -293,86 +218,13 @@ function PortfolioWidget({ market: _market }: { market: MarketMap }) {
 
   return (
     <div className="space-y-3">
-      {/* Balance */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <div className="text-[9px] uppercase tracking-widest text-gray-600">USDT Balance</div>
-            {syncStatus === "checking" && <span className="text-[9px] text-gray-600 animate-pulse">prüfe…</span>}
-            {syncStatus === "credited" && <span className="text-[9px] text-emerald-400">✓ Einzahlung erkannt</span>}
-          </div>
-          <div className="text-2xl font-bold text-white tabular-nums">${fmtPrice(balance)}</div>
-        </div>
-        <button
-          onClick={() => { setShowWithdraw(o => !o); setTxError(""); setAmount(""); }}
-          className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition ${showWithdraw ? "border-red-500/40 text-red-400 bg-red-500/10" : "border-white/10 text-gray-300 hover:text-white hover:border-white/20"}`}
-        >
-          <IconArrowUpRight className="h-3 w-3" /> Auszahlen
-        </button>
+      <div>
+        <div className="text-[9px] uppercase tracking-widest text-gray-600 mb-0.5">Demo · USDT</div>
+        <div className="text-2xl font-bold text-white tabular-nums">${fmtPrice(balance)}</div>
       </div>
-
-      {showWithdraw && (
-        <div className="space-y-1.5">
-          <input
-            type="text" autoFocus
-            value={withdrawAddr} onChange={e => { setWithdrawAddr(e.target.value); setTxError(""); }}
-            placeholder="BSC-Adresse (0x...)"
-            className="w-full bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder:text-gray-600 font-mono focus:outline-none focus:border-red-500/50"
-          />
-          <div className="flex items-center gap-1.5">
-            <input
-              type="number" inputMode="decimal"
-              value={amount} onChange={e => { setAmount(e.target.value); setTxError(""); }}
-              onKeyDown={e => { if (e.key === "Enter") withdraw(); if (e.key === "Escape") setShowWithdraw(false); }}
-              placeholder="Betrag USDT"
-              className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/50"
-            />
-            <button onClick={withdraw} disabled={busy} className="text-[11px] px-2.5 py-1.5 rounded font-medium bg-red-600 hover:bg-red-500 text-white transition disabled:opacity-40">
-              {busy ? "…" : "Senden"}
-            </button>
-          </div>
-          {txError && <p className="text-[10px] text-red-400">{txError}</p>}
-          {txHash && <p className="text-[10px] text-emerald-400 break-all">✓ Gesendet: {txHash}</p>}
-        </div>
-      )}
-
-      {/* Platform deposit address */}
-      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · BEP-20 (BSC)</div>
-          <button onClick={copyAddr} className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition">
-            {copied ? <IconCheck className="h-3 w-3 text-emerald-400" /> : <IconCopy className="h-3 w-3" />}
-            {copied ? "Kopiert" : "Kopieren"}
-          </button>
-        </div>
-        <span className="text-[11px] text-gray-400 font-mono break-all">{PLATFORM_DEPOSIT_ADDR}</span>
-      </div>
-
-      {/* Solana address */}
-      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[9px] uppercase tracking-widest text-gray-600">Einzahlen · Solana (Phantom)</div>
-          <button onClick={() => { setShowSolInput(o => !o); setSolInput(solAddr ?? ""); }} className="text-[10px] text-gray-500 hover:text-white transition">
-            {solAddr ? "Ändern" : "+ Hinzufügen"}
-          </button>
-        </div>
-        {showSolInput ? (
-          <div className="flex items-center gap-1.5">
-            <input autoFocus value={solInput} onChange={e => setSolInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") saveSolAddr(); if (e.key === "Escape") setShowSolInput(false); }}
-              placeholder="Phantom-Adresse…"
-              className="flex-1 min-w-0 bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[11px] text-white placeholder:text-gray-600 font-mono focus:outline-none focus:border-violet-500/50"
-            />
-            <button onClick={saveSolAddr} disabled={savingSol} className="shrink-0 text-[10px] px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white transition disabled:opacity-40">
-              {savingSol ? "…" : "OK"}
-            </button>
-          </div>
-        ) : solAddr ? (
-          <span className="text-[11px] text-gray-400 font-mono break-all">{solAddr}</span>
-        ) : (
-          <span className="text-[11px] text-gray-600">Noch nicht hinterlegt</span>
-        )}
-      </div>
+      <Link href="/portfolio" className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-cyan-400 transition">
+        Portfolio verwalten →
+      </Link>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const cur = String(currency || "").toUpperCase();
   const amt = Number(amount);
 
-  if (type !== "deposit" && type !== "withdraw") {
+  if (type !== "deposit" && type !== "withdraw" && type !== "set") {
     return NextResponse.json({ error: "Ungültiger Transaktionstyp." }, { status: 400 });
   }
   if (!cur) {
@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
   }
 
   const current = parseFloat(wallet.balance ?? "0");
-  const next = type === "deposit" ? current + amt : current - amt;
+  const next = type === "set" ? amt : type === "deposit" ? current + amt : current - amt;
 
-  if (next < 0) {
+  if (next < 0 && type !== "set") {
     return NextResponse.json({ error: "Unzureichendes Guthaben." }, { status: 400 });
   }
 
