@@ -189,7 +189,7 @@ export function Hero() {
               className="mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs text-gray-500 dark:text-gray-400 font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Beta · Jetzt kostenlos starten
+                Beta · Early Access
               </div>
             </motion.div>
 
