@@ -80,7 +80,7 @@ export function ChartCanvas({
   magnetMode = "off",
   activeTool = "cursor", drawings = [],
   onAddDrawing, onUpdateDrawing, onDeleteDrawing,
-  saveRef, symbol = "BTCUSDT", chartBg = "#0a0b10",
+  saveRef, symbol = "BTCUSDT", chartBg = "#050608",
   openPositions = [],
 }: {
   candles:       Candle[];

@@ -68,7 +68,7 @@ export function ChartToolbar({ activeTool, onToolChange, chartType, onTypeChange
   const magnetColor = magnetMode === "strong" ? "yellow" : magnetMode === "weak" ? undefined : undefined;
 
   return (
-    <div className="shrink-0 w-6 flex flex-col items-center gap-px py-1 border-r border-white/[0.05] bg-[#080910]">
+    <div className="shrink-0 w-6 flex flex-col items-center gap-px py-1 border-r border-white/[0.05] bg-[#07080d]">
       {DRAW_TOOLS.map(({ tool, Icon, title }) => (
         <Btn
           key={tool}

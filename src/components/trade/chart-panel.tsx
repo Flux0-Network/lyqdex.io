@@ -48,7 +48,7 @@ export function ChartPanel({
   const [showVolume,   setShowVolume]   = useState(true);
   const [candleColors, setCandleColors] = useState({ up: "#26a69a", down: "#ef5350" });
   const [magnetMode,   setMagnetMode]   = useState<MagnetMode>("off");
-  const [chartBg,      setChartBg]      = useState("#0a0b10");
+  const [chartBg,      setChartBg]      = useState("#050608");
   const [showSettings,   setShowSettings]   = useState(false);
   const [openPositions,  setOpenPositions]  = useState<OpenPosition[]>([]);
   const settingsRef   = useRef<HTMLDivElement>(null);

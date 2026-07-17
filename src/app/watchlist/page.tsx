@@ -82,7 +82,7 @@ export default function WatchlistPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#080910] text-white" style={{ paddingLeft: SIDEBAR_W }}>
+    <div className="min-h-screen bg-[#07080d] text-white" style={{ paddingLeft: SIDEBAR_W }}>
       <AppSidebar active="watchlist" walletAddr={walletAddr} />
 
       <div className="max-w-2xl mx-auto px-5 py-8">

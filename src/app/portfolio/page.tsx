@@ -67,7 +67,7 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080910] text-white" style={{ paddingLeft: SIDEBAR_W }}>
+    <div className="min-h-screen bg-[#07080d] text-white" style={{ paddingLeft: SIDEBAR_W }}>
       <AppSidebar active="portfolio" walletAddr={walletAddr} />
       <div className="max-w-lg mx-auto px-6 py-10">
         <h1 className="text-xs uppercase tracking-widest text-gray-600 mb-6">Portfolio</h1>
