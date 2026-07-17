@@ -396,7 +396,8 @@ export function ChartCanvas({
         const isLong=d.type==="long";
         const ey=pY(d.entry),ty=pY(d.target),sy=pY(d.stop);
         const sx=Math.max(PAD.left,pointToX({time:d.startTime,price:d.entry}));
-        const ex=W-PAD.right;
+        // Stop zone ~40% into the right padding, well before the price axis
+        const ex=Math.min(cX(rmi) + cw * 3, W - PAD.right - 8);
         ctx.fillStyle=isLong?"rgba(38,166,154,0.1)":"rgba(239,83,80,0.1)";
         ctx.fillRect(sx,Math.min(ey,ty),ex-sx,Math.abs(ey-ty));
         ctx.fillStyle=isLong?"rgba(239,83,80,0.1)":"rgba(38,166,154,0.1)";
@@ -409,13 +410,13 @@ export function ChartCanvas({
         drawLine(ey,"#9ca3af",true);
         drawLine(ty,isLong?"#26a69a":"#ef5350");
         drawLine(sy,isLong?"#ef5350":"#26a69a");
-        ctx.font="9px ui-monospace,monospace";ctx.textAlign="left";ctx.textBaseline="middle";
+        ctx.font="9px ui-monospace,monospace";ctx.textAlign="right";ctx.textBaseline="middle";
         const pct=(p:number)=>((p-d.entry)/d.entry*100).toFixed(2);
-        ctx.fillStyle="#9ca3af";ctx.fillText("ENTRY",ex+5,ey);
+        ctx.fillStyle="#9ca3af";ctx.fillText("ENTRY",ex-5,ey);
         ctx.fillStyle=isLong?"#26a69a":"#ef5350";
-        ctx.fillText(`${isLong?"+":""}${pct(d.target)}%`,ex+5,ty);
+        ctx.fillText(`${isLong?"+":""}${pct(d.target)}%`,ex-5,ty);
         ctx.fillStyle=isLong?"#ef5350":"#26a69a";
-        ctx.fillText(`${pct(d.stop)}%`,ex+5,sy);
+        ctx.fillText(`${pct(d.stop)}%`,ex-5,sy);
       } else if (d.type==="trendline") {
         const x1=pointToX(d.p1),y1=pY(d.p1.price),x2=pointToX(d.p2),y2=pY(d.p2.price);
         ctx.strokeStyle=COL;ctx.lineWidth=LW;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
