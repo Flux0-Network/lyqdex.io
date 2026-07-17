@@ -77,7 +77,7 @@ export default function NewsPage() {
     <div className="min-h-screen bg-[#080910] text-white" style={{ paddingLeft: SIDEBAR_W }}>
       <AppSidebar active="news" walletAddr={walletAddr} />
 
-      <div className="max-w-2xl mx-auto px-5 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-8">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -141,7 +141,7 @@ export default function NewsPage() {
         ) : shown.length === 0 ? (
           <div className="text-center py-20 text-gray-700 text-sm">Keine Artikel gefunden</div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {shown.map((a, i) => {
               const s = SENT_CONFIG[a.sentiment];
               return (
