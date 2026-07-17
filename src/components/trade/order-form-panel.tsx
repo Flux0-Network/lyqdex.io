@@ -66,6 +66,7 @@ export function OrderFormPanel({ symbol = "BTCUSDT", base = "BTC" }: { symbol?: 
       setMargin("");
       setState("done");
       window.dispatchEvent(new CustomEvent("lyqdex-position-opened", { detail: data.position }));
+      window.dispatchEvent(new CustomEvent("lyqdex-trade", { detail: { side: side === "long" ? "buy" : "sell", price: effPrice, time: Date.now() } }));
       setTimeout(() => setState("idle"), 2000);
     } catch {
       setErrMsg("Netzwerkfehler.");

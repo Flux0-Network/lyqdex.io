@@ -62,16 +62,27 @@ export function ChartPanel({
     saveRef.current = () => canvasSaveRef.current?.();
   }, [saveRef]);
 
-  // Sync open positions from localStorage → chart overlay
+  // Sync open positions from API → chart overlay
   const reloadPositions = useCallback(() => {
-    try { setOpenPositions(JSON.parse(localStorage.getItem("lyqdex_positions") || "[]")); } catch { /* ignore */ }
+    fetch("/api/positions")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.positions) return;
+        setOpenPositions(d.positions.map((p: { symbol: string; side: string; entry_price: number; leverage: number }) => ({
+          symbol:   p.symbol,
+          side:     p.side === "long" ? "buy" : "sell",
+          price:    p.entry_price,
+          leverage: p.leverage,
+        })));
+      })
+      .catch(() => {});
   }, []);
   useEffect(() => {
     reloadPositions();
-    window.addEventListener("lyqdex-trade",           reloadPositions);
+    window.addEventListener("lyqdex-position-opened", reloadPositions);
     window.addEventListener("lyqdex-position-closed", reloadPositions);
     return () => {
-      window.removeEventListener("lyqdex-trade",           reloadPositions);
+      window.removeEventListener("lyqdex-position-opened", reloadPositions);
       window.removeEventListener("lyqdex-position-closed", reloadPositions);
     };
   }, [reloadPositions]);
