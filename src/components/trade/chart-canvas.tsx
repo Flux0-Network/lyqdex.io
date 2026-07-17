@@ -16,8 +16,8 @@ export type Drawing =
   | { id: string; type: "hline";     price: number }
   | { id: string; type: "rect";      p1: DrawingPoint; p2: DrawingPoint }
   | { id: string; type: "fib";       p1: DrawingPoint; p2: DrawingPoint }
-  | { id: string; type: "long";  entry: number; target: number; stop: number; startTime: number }
-  | { id: string; type: "short"; entry: number; target: number; stop: number; startTime: number };
+  | { id: string; type: "long";  entry: number; target: number; stop: number; startTime: number; endTime?: number }
+  | { id: string; type: "short"; entry: number; target: number; stop: number; startTime: number; endTime?: number };
 
 const MA_PERIODS = [5, 10, 30, 60];
 const PAD        = { top: 10, right: 72, bottom: 28, left: 4 };
@@ -125,8 +125,8 @@ export function ChartCanvas({
 
   const drawStartRef = useRef<{ point: DrawingPoint } | null>(null);
   const drawDragRef  = useRef<{
-    id: string; handle: "whole"|"entry"|"target"|"stop";
-    startPrice: number; startDrawing: Drawing;
+    id: string; handle: "whole"|"entry"|"target"|"stop"|"right";
+    startPrice: number; startX: number; startDrawing: Drawing;
   } | null>(null);
 
   const maData   = useMemo(() => MA_PERIODS.map(p => calcMA(candles, p)), [candles]);
@@ -210,13 +210,16 @@ export function ChartCanvas({
   }
 
   // ── Hit-test helpers
-  function hitTestPos(d: Drawing & { type:"long"|"short"; entry:number; target:number; stop:number }, mx: number, my: number, W: number, H: number) {
-    const { pY, pointToX } = getCoords(W, H);
+  function hitTestPos(d: Drawing & { type:"long"|"short"; entry:number; target:number; stop:number; endTime?: number }, mx: number, my: number, W: number, H: number) {
+    const { pY, cX, cw, rmi, pointToX } = getCoords(W, H);
     const THR = 8;
-    // Only hit within the position's horizontal extent (start → right edge)
     const sx = Math.max(PAD.left, pointToX({ time: d.startTime, price: d.entry }));
-    const ex = W - PAD.right;
+    const ex = d.endTime != null
+      ? Math.max(sx + 20, pointToX({ time: d.endTime, price: d.entry }))
+      : Math.min(cX(rmi) + cw * 3, W - PAD.right - 8);
     if (mx < sx - THR || mx > ex + THR) return null;
+    // Right-edge resize handle (last 12px of zone)
+    if (mx > ex - 12) return "right" as const;
     if (Math.abs(pY(d.entry)  - my) < THR) return "entry"  as const;
     if (Math.abs(pY(d.target) - my) < THR) return "target" as const;
     if (Math.abs(pY(d.stop)   - my) < THR) return "stop"   as const;
@@ -397,8 +400,9 @@ export function ChartCanvas({
         const isLong=d.type==="long";
         const ey=pY(d.entry),ty=pY(d.target),sy=pY(d.stop);
         const sx=Math.max(PAD.left,pointToX({time:d.startTime,price:d.entry}));
-        // Stop zone ~40% into the right padding, well before the price axis
-        const ex=Math.min(cX(rmi) + cw * 3, W - PAD.right - 8);
+        const ex=d.endTime!=null
+          ?Math.max(sx+20,pointToX({time:d.endTime,price:d.entry}))
+          :Math.min(cX(rmi)+cw*3,W-PAD.right-8);
         ctx.fillStyle=isLong?"rgba(38,166,154,0.1)":"rgba(239,83,80,0.1)";
         ctx.fillRect(sx,Math.min(ey,ty),ex-sx,Math.abs(ey-ty));
         ctx.fillStyle=isLong?"rgba(239,83,80,0.1)":"rgba(38,166,154,0.1)";
@@ -411,6 +415,12 @@ export function ChartCanvas({
         drawLine(ey,"#9ca3af",true);
         drawLine(ty,isLong?"#26a69a":"#ef5350");
         drawLine(sy,isLong?"#ef5350":"#26a69a");
+        // Right-edge resize grip (three vertical lines)
+        const midY=(Math.min(ey,ty,sy)+Math.max(ey,ty,sy))/2;
+        ctx.strokeStyle="rgba(156,163,175,0.5)";ctx.lineWidth=1;
+        for(let gi=-3;gi<=3;gi+=3){
+          ctx.beginPath();ctx.moveTo(ex-4+gi,midY-5);ctx.lineTo(ex-4+gi,midY+5);ctx.stroke();
+        }
         ctx.font="9px ui-monospace,monospace";ctx.textAlign="right";ctx.textBaseline="middle";
         const pct=(p:number)=>((p-d.entry)/d.entry*100).toFixed(2);
         ctx.fillStyle="#9ca3af";ctx.fillText("ENTRY",ex-5,ey);
@@ -666,9 +676,9 @@ export function ChartCanvas({
       const{xyToPoint}=getCoords(W,H);
       if(d.type==="long"||d.type==="short"){
         const handle=hitTestPos(d,mx,my,W,H);
-        if(handle){setSelectedId(d.id);drawDragRef.current={id:d.id,handle,startPrice:xyToPoint(mx,my).price,startDrawing:d};return;}
+        if(handle){setSelectedId(d.id);drawDragRef.current={id:d.id,handle,startPrice:xyToPoint(mx,my).price,startX:mx,startDrawing:d};return;}
       } else if(hitTestOther(d,mx,my,W,H)){
-        setSelectedId(d.id);drawDragRef.current={id:d.id,handle:"whole",startPrice:xyToPoint(mx,my).price,startDrawing:d};return;
+        setSelectedId(d.id);drawDragRef.current={id:d.id,handle:"whole",startPrice:xyToPoint(mx,my).price,startX:mx,startDrawing:d};return;
       }
     }
     setSelectedId(null);
@@ -696,8 +706,8 @@ export function ChartCanvas({
         const d=drawings[i];
         if(d.type==="long"||d.type==="short"){
           const h=hitTestPos(d,mx,my,W,H);
-          if(h==="entry"){setCursorStyle("ns-resize");found=true;break;}
-          if(h==="target"||h==="stop"){setCursorStyle("ns-resize");found=true;break;}
+          if(h==="entry"||h==="target"||h==="stop"){setCursorStyle("ns-resize");found=true;break;}
+          if(h==="right"){setCursorStyle("ew-resize");found=true;break;}
           if(h==="whole"){setCursorStyle("move");found=true;break;}
         } else if(hitTestOther(d,mx,my,W,H)){setCursorStyle("move");found=true;break;}
       }
@@ -721,12 +731,32 @@ export function ChartCanvas({
     // Drag drawing
     if(drawDragRef.current){
       const pt=xyToPoint(mx,my),dp=pt.price-drawDragRef.current.startPrice;
+      const dx=mx-drawDragRef.current.startX;
       const d=drawDragRef.current.startDrawing,h=drawDragRef.current.handle;
       let moved:Drawing;
-      if((d.type==="long"||d.type==="short")&&h!=="whole"){
+      if(d.type==="long"||d.type==="short"){
         if(h==="entry")  moved={...d,entry:d.entry+dp};
         else if(h==="target") moved={...d,target:d.target+dp};
-        else             moved={...d,stop:d.stop+dp};
+        else if(h==="stop")   moved={...d,stop:d.stop+dp};
+        else if(h==="right"){
+          // Resize: shift endTime by dx pixels converted to time
+          const {cw,rmi,lmi}=getCoords(W,H);
+          const barDt=candles.length>=2?(candles[candles.length-1].time-candles[candles.length-2].time)||3600:3600;
+          const dtPerPx=barDt/cw;
+          const startEndTime=("endTime" in d&&d.endTime!=null)?d.endTime:
+            (candles[Math.min(candles.length-1,rmi)]?.time??candles[candles.length-1].time)+(3*barDt);
+          moved={...d,endTime:Math.max(d.startTime+barDt,startEndTime+Math.round(dx*dtPerPx))};
+        } else {
+          // whole: move both price and time
+          const {cw}=getCoords(W,H);
+          const barDt=candles.length>=2?(candles[candles.length-1].time-candles[candles.length-2].time)||3600:3600;
+          const dtPerPx=barDt/cw;
+          const startEndTime=("endTime" in d&&d.endTime!=null)?d.endTime:null;
+          const timeDelta=Math.round(dx*dtPerPx);
+          moved={...d,entry:d.entry+dp,target:d.target+dp,stop:d.stop+dp,
+            startTime:d.startTime-timeDelta,
+            ...(startEndTime!=null?{endTime:startEndTime-timeDelta}:{})};
+        }
       } else {
         moved=translateDrawing(d,dp);
       }
