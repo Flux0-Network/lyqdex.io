@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppNavbar } from "@/components/shared/app-navbar";
 import { AppSidebar, SIDEBAR_W } from "@/components/shared/app-sidebar";
 import { ChartPanel } from "@/components/trade/chart-panel";
@@ -13,8 +14,10 @@ function baseOf(symbol: string) {
   return symbol.replace(/USDT$/i, "");
 }
 
-export default function TradePage() {
-  const [symbol,       setSymbol]       = useState("BTCUSDT");
+function TradePageInner() {
+  const searchParams = useSearchParams();
+  const initialSymbol = (searchParams.get("symbol") ?? "BTCUSDT").toUpperCase();
+  const [symbol,       setSymbol]       = useState(initialSymbol);
   const [timeframe,    setTimeframe]    = useState("1H");
   const [walletAddr,   setWalletAddr]   = useState<string | null>(null);
   const [replayActive, setReplayActive] = useState(false);
@@ -89,5 +92,13 @@ export default function TradePage() {
       </div>
 
     </div>
+  );
+}
+
+export default function TradePage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-[#0a0b0e]" />}>
+      <TradePageInner />
+    </Suspense>
   );
 }

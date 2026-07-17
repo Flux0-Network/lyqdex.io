@@ -68,10 +68,12 @@ function parseRSS(xml: string, source: string, category: "crypto" | "macro"): Ar
 }
 
 const FEEDS: { url: string; source: string; category: "crypto" | "macro" }[] = [
+  { url: "https://www.btc-echo.de/feed/", source: "BTC-Echo", category: "crypto" },
   { url: "https://cointelegraph.com/rss", source: "CoinTelegraph", category: "crypto" },
   { url: "https://coindesk.com/arc/outboundfeeds/rss/", source: "CoinDesk", category: "crypto" },
   { url: "https://cryptonews.com/news/feed/", source: "CryptoNews", category: "crypto" },
   { url: "https://decrypt.co/feed", source: "Decrypt", category: "crypto" },
+  { url: "https://www.finanzen.net/rss/news", source: "Finanzen.net", category: "macro" },
   { url: "https://www.investing.com/rss/news_301.rss", source: "Investing.com", category: "macro" },
   { url: "https://feeds.reuters.com/reuters/businessNews", source: "Reuters", category: "macro" },
 ];
