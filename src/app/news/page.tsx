@@ -75,7 +75,7 @@ export default function NewsPage() {
   const negPercent = totalCount ? Math.round((counts.negative / totalCount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#080910] text-white" style={{ paddingLeft: SIDEBAR_W }}>
+    <div className="min-h-screen bg-[#07080d] text-white" style={{ paddingLeft: SIDEBAR_W }}>
       <AppSidebar active="news" walletAddr={walletAddr} />
 
       <div className="max-w-5xl mx-auto px-6 py-8">

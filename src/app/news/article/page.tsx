@@ -52,7 +52,7 @@ function ArticleContent() {
   const cat = CAT[article.category] ?? CAT.crypto;
 
   return (
-    <div className="min-h-screen bg-[#080910] text-white" style={{ paddingLeft: SIDEBAR_W }}>
+    <div className="min-h-screen bg-[#07080d] text-white" style={{ paddingLeft: SIDEBAR_W }}>
       <AppSidebar active="news" walletAddr={walletAddr} />
 
       <div className="max-w-2xl mx-auto px-5 py-8">
@@ -113,7 +113,7 @@ function ArticleContent() {
 
 export default function ArticlePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#080910]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#07080d]" />}>
       <ArticleContent />
     </Suspense>
   );

@@ -33,7 +33,7 @@ export function TerminalHeader() {
   const isUp = change >= 0;
 
   return (
-    <div className="flex items-center gap-6 px-4 h-11 border-b border-white/[0.06] bg-[#0c0d14] shrink-0 overflow-x-auto scrollbar-none">
+    <div className="flex items-center gap-6 px-4 h-11 border-b border-white/[0.06] bg-[#07080d] shrink-0 overflow-x-auto scrollbar-none">
       {/* Symbol */}
       <button className="flex items-center gap-1.5 shrink-0 group">
         <IconStar className="h-3.5 w-3.5 text-gray-600 group-hover:text-yellow-400 transition" />

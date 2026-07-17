@@ -87,7 +87,7 @@ export function AppNavbar({
 
   return (
     <nav
-      className="fixed top-0 right-0 z-40 h-11 bg-[#0c0d14] border-b border-white/[0.06] flex items-center gap-2 px-3"
+      className="fixed top-0 right-0 z-40 h-11 bg-[#07080d] border-b border-white/[0.06] flex items-center gap-2 px-3"
       style={{ left: sidebarWidth }}
     >
       {/* Pair selector */}
@@ -105,7 +105,7 @@ export function AppNavbar({
         {pairOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setPairOpen(false)} />
-            <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-[#0f1018] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
+            <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-[#09090f] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
               <div className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-gray-600">Handelspaar wählen</div>
               {PAIRS.map(p => (
                 <button

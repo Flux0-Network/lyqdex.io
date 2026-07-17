@@ -43,7 +43,7 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
   }
 
   return (
-    <div className="fixed left-0 top-0 bottom-0 bg-[#0c0d14] z-50 flex flex-col items-center" style={{ width: SIDEBAR_W }}>
+    <div className="fixed left-0 top-0 bottom-0 bg-[#07080d] z-50 flex flex-col items-center" style={{ width: SIDEBAR_W }}>
       {/* Logo */}
       <div className="h-11 flex items-center justify-center shrink-0">
         <Link href="/"><Image src="/lyqdex-icon.png" alt="LyqDex" width={24} height={24} /></Link>
@@ -85,7 +85,7 @@ export function AppSidebar({ active, walletAddr }: { active?: Active; walletAddr
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                <div className="absolute bottom-0 left-full ml-2 z-50 w-48 bg-[#0f1018] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
+                <div className="absolute bottom-0 left-full ml-2 z-50 w-48 bg-[#09090f] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
                   <div className="px-3 py-2 border-b border-white/[0.06]">
                     <div className="text-[10px] text-gray-500 mb-0.5">Wallet</div>
                     <div className="text-[11px] text-white font-mono truncate">{walletAddr}</div>

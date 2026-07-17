@@ -61,7 +61,7 @@ export default function LoginPage() {
     }`;
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#050608] flex items-center justify-center px-4">
       <div className="w-full max-w-sm py-12">
         <Link href="/" className="flex items-center justify-center mb-10">
           <Image

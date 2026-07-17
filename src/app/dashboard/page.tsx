@@ -108,13 +108,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e]">
+    <div className="min-h-screen bg-[#050608]">
       <AppSidebar active="dashboard" walletAddr={walletAddr} />
 
       {/* Content */}
       <div style={{ marginLeft: SIDEBAR_W }} className="min-h-screen">
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-[#0a0b0e]/90 backdrop-blur border-b border-white/[0.06] px-4 sm:px-6 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-30 bg-[#050608]/90 backdrop-blur border-b border-white/[0.06] px-4 sm:px-6 py-3 flex items-center gap-3">
           <div>
             <h1 className="text-white font-semibold text-base leading-tight">Dashboard</h1>
             <p className="text-[11px] text-gray-500 leading-tight">Deine Übersicht · individuell anpassbar</p>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
               {addOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setAddOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-50 w-52 bg-[#0f1018] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
+                  <div className="absolute right-0 top-full mt-1 z-50 w-52 bg-[#09090f] border border-white/[0.08] rounded-xl py-1 shadow-2xl">
                     {(Object.keys(WIDGET_META) as WidgetType[]).map(type => (
                       <button key={type} onClick={() => addWidget(type)} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-gray-300 hover:bg-white/[0.04] hover:text-white transition">
                         {widgetIcon(type)} {WIDGET_META[type].label}
@@ -160,7 +160,7 @@ export default function DashboardPage() {
         <div className="p-4 sm:p-6">
           {!mounted ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {[0, 1, 2].map(i => <div key={i} className="rounded-xl border border-white/[0.06] bg-[#0c0d14] h-[180px] animate-pulse" />)}
+              {[0, 1, 2].map(i => <div key={i} className="rounded-xl border border-white/[0.06] bg-[#07080d] h-[180px] animate-pulse" />)}
             </div>
           ) : layout.length === 0 ? (
             <div className="text-center text-gray-600 text-sm py-20">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                   onDragStart={() => { dragIdx.current = idx; }}
                   onDragOver={(e) => { if (edit) e.preventDefault(); }}
                   onDrop={() => onDrop(idx)}
-                  className={`${sizeClass(cfg.size)} rounded-xl border bg-[#0c0d14] flex flex-col ${
+                  className={`${sizeClass(cfg.size)} rounded-xl border bg-[#07080d] flex flex-col ${
                     edit ? "border-cyan-500/25 cursor-move" : "border-white/[0.07]"
                   }`}
                 >
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white/[0.05] border border-white/10 rounded text-[10px] text-gray-300 px-1 py-0.5 focus:outline-none"
                       >
-                        {SYMBOLS.map(s => <option key={s.sym} value={s.sym} className="bg-[#0f1018]">{s.base}</option>)}
+                        {SYMBOLS.map(s => <option key={s.sym} value={s.sym} className="bg-[#09090f]">{s.base}</option>)}
                       </select>
                     )}
                     {edit && (
