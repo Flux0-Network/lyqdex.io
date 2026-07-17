@@ -110,6 +110,7 @@ export function ChartCanvas({
   const [yZoom,       setYZoom]       = useState(1.0);
   const [yOffset,     setYOffset]     = useState(0);
   const [logScale,    setLogScale]    = useState(false);
+  const [cursorStyle, setCursorStyle] = useState<string>("grab");
 
   const dragRef     = useRef<{ startX: number; startOffset: number; startY: number; startYOffset: number } | null>(null);
   const yDragRef    = useRef<{ startY: number; startZoom: number } | null>(null);
@@ -671,6 +672,7 @@ export function ChartCanvas({
       }
     }
     setSelectedId(null);
+    setCursorStyle("grabbing");
     dragRef.current={startX:e.clientX,startOffset:offset,startY:e.clientY,startYOffset:yOffset};
     velRef.current=0;lastMXRef.current={x:e.clientX,t:performance.now()};
   }
@@ -684,6 +686,23 @@ export function ChartCanvas({
     const rp=80;
     const fromRight=Math.round((PAD.left+chartW-rp-mx)/cw);
     onHover?.(candles[Math.max(0,Math.min(candles.length-1,rmi-fromRight))]??null);
+
+    // Update cursor based on what's under the pointer
+    if(activeTool!=="cursor"){setCursorStyle("crosshair");}
+    else if(dragRef.current){setCursorStyle("grabbing");}
+    else if(!drawDragRef.current){
+      let found=false;
+      for(let i=drawings.length-1;i>=0;i--){
+        const d=drawings[i];
+        if(d.type==="long"||d.type==="short"){
+          const h=hitTestPos(d,mx,my,W,H);
+          if(h==="entry"){setCursorStyle("ns-resize");found=true;break;}
+          if(h==="target"||h==="stop"){setCursorStyle("ns-resize");found=true;break;}
+          if(h==="whole"){setCursorStyle("move");found=true;break;}
+        } else if(hitTestOther(d,mx,my,W,H)){setCursorStyle("move");found=true;break;}
+      }
+      if(!found) setCursorStyle(dragRef.current?"grabbing":"grab");
+    }
 
     // Y-axis drag
     if(yDragRef.current){
@@ -728,6 +747,7 @@ export function ChartCanvas({
     if(drawDragRef.current){drawDragRef.current=null;return;}
     if(dragRef.current){
       dragRef.current=null;
+      setCursorStyle("grab");
       const vel=velRef.current;
       if(Math.abs(vel)>0.5){let v=vel;function step(){v*=0.88;if(Math.abs(v)<0.3)return;setOffset(p=>p+v);animRef.current=requestAnimationFrame(step);}requestAnimationFrame(step);}
       return;
@@ -753,7 +773,8 @@ export function ChartCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full select-none ${activeTool==="cursor"?"cursor-grab":"cursor-crosshair"}`}
+      className="relative w-full h-full select-none"
+      style={{ cursor: cursorStyle }}
       onWheel={onWheel}
       onDoubleClick={onDblClick}
       onMouseDown={onMouseDown}
