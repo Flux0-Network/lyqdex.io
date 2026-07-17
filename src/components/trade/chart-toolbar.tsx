@@ -44,7 +44,7 @@ function Btn({ active, title, onClick, children, color }: {
     <button
       onClick={onClick}
       title={title}
-      className={`w-6 h-6 flex items-center justify-center rounded transition ${
+      className={`w-5 h-5 flex items-center justify-center rounded transition ${
         active
           ? color === "green" ? "bg-emerald-500/20 text-emerald-400"
             : color === "red" ? "bg-red-500/20 text-red-400"
@@ -68,7 +68,7 @@ export function ChartToolbar({ activeTool, onToolChange, chartType, onTypeChange
   const magnetColor = magnetMode === "strong" ? "yellow" : magnetMode === "weak" ? undefined : undefined;
 
   return (
-    <div className="shrink-0 w-7 flex flex-col items-center gap-0.5 py-1 border-r border-white/[0.05] bg-[#080910]">
+    <div className="shrink-0 w-6 flex flex-col items-center gap-px py-1 border-r border-white/[0.05] bg-[#080910]">
       {DRAW_TOOLS.map(({ tool, Icon, title }) => (
         <Btn
           key={tool}
@@ -77,35 +77,29 @@ export function ChartToolbar({ activeTool, onToolChange, chartType, onTypeChange
           onClick={() => onToolChange(tool)}
           color={tool === "long" ? "green" : tool === "short" ? "red" : undefined}
         >
-          <Icon className="h-3.5 w-3.5" />
+          <Icon className="h-3 w-3" />
         </Btn>
       ))}
 
-      <div className="w-4 border-t border-white/[0.06] my-0.5" />
+      <div className="w-3 border-t border-white/[0.06] my-px" />
 
-      {/* Magnet toggle */}
-      <Btn
-        active={magnetMode !== "off"}
-        title={magnetTitle}
-        onClick={cycleMagnet}
-        color={magnetColor}
-      >
-        <IconMagnet className="h-3.5 w-3.5" />
+      <Btn active={magnetMode !== "off"} title={magnetTitle} onClick={cycleMagnet} color={magnetColor}>
+        <IconMagnet className="h-3 w-3" />
       </Btn>
 
-      <div className="w-4 border-t border-white/[0.06] my-0.5" />
+      <div className="w-3 border-t border-white/[0.06] my-px" />
 
       {CHART_TYPES.map(({ type, Icon, title }) => (
         <Btn key={type} active={chartType === type} title={title} onClick={() => onTypeChange(type)}>
-          <Icon className="h-3.5 w-3.5" />
+          <Icon className="h-3 w-3" />
         </Btn>
       ))}
 
       {onClearAll && (
         <>
-          <div className="w-4 border-t border-white/[0.06] my-0.5" />
+          <div className="w-3 border-t border-white/[0.06] my-px" />
           <Btn title="Zeichnungen löschen" onClick={onClearAll}>
-            <IconTrash className="h-3.5 w-3.5" />
+            <IconTrash className="h-3 w-3" />
           </Btn>
         </>
       )}
