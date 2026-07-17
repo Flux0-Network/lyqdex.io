@@ -87,8 +87,8 @@ export function AppNavbar({
 
   return (
     <nav
-      className="fixed top-0 right-0 z-40 h-11 bg-[#07080d] border-b border-white/[0.06] flex items-center gap-2 px-3"
-      style={{ left: sidebarWidth }}
+      className="fixed top-0 right-0 z-40 h-11 bg-[#07080d] border-b border-white/[0.06] flex items-center gap-2 px-3 left-0 md:left-[var(--sidebar-left)]"
+      style={{ "--sidebar-left": `${sidebarWidth}px` } as React.CSSProperties}
     >
       {/* Pair selector */}
       <div ref={pairRef} className="relative shrink-0">
