@@ -138,7 +138,7 @@ export function ChartCanvas({
     const volH   = chartH * volRatio;
     const priceH = chartH - volH - (showVolume ? 4 : 0);
     const cw     = Math.max(2, candleWidth);
-    const rp     = 60;
+    const rp     = 80;
     const rmi    = candles.length - 1 - Math.floor(offset / cw);
     const lmi    = Math.max(0, rmi - Math.ceil(chartW / cw) - 2);
     // Only include real candles for price range calculation
@@ -627,7 +627,7 @@ export function ChartCanvas({
       return;
     }
     const oldCW=Math.max(2,candleWidth),newCW=Math.min(40,Math.max(2,oldCW*(e.deltaY>0?0.85:1.18)));
-    const rp=60,cW=rect.width-PAD.left-PAD.right;
+    const rp=80,cW=rect.width-PAD.left-PAD.right;
     setOffset(p=>p+(PAD.left+cW-rp-mx)*(newCW/oldCW-1));
     setCandleWidth(newCW);
   }
@@ -680,7 +680,7 @@ export function ChartCanvas({
     setCrosshair({x:mx,y:my});
     const W=rect.width,H=rect.height;
     const{cw,rmi,chartW,xyToPoint}=getCoords(W,H);
-    const rp=60;
+    const rp=80;
     const fromRight=Math.round((PAD.left+chartW-rp-mx)/cw);
     onHover?.(candles[Math.max(0,Math.min(candles.length-1,rmi-fromRight))]??null);
 

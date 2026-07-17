@@ -31,10 +31,10 @@ export interface Article {
   source: string;
   time: string;
   sentiment: "positive" | "negative" | "neutral";
-  category: "crypto" | "macro";
+  category: "crypto" | "macro" | "forex";
 }
 
-function parseRSS(xml: string, source: string, category: "crypto" | "macro"): Article[] {
+function parseRSS(xml: string, source: string, category: "crypto" | "macro" | "forex"): Article[] {
   const items: Article[] = [];
   const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
   for (const match of itemMatches) {
@@ -67,7 +67,7 @@ function parseRSS(xml: string, source: string, category: "crypto" | "macro"): Ar
   return items;
 }
 
-const FEEDS: { url: string; source: string; category: "crypto" | "macro" }[] = [
+const FEEDS: { url: string; source: string; category: "crypto" | "macro" | "forex" }[] = [
   { url: "https://www.btc-echo.de/feed/", source: "BTC-Echo", category: "crypto" },
   { url: "https://cointelegraph.com/rss", source: "CoinTelegraph", category: "crypto" },
   { url: "https://coindesk.com/arc/outboundfeeds/rss/", source: "CoinDesk", category: "crypto" },
@@ -76,6 +76,7 @@ const FEEDS: { url: string; source: string; category: "crypto" | "macro" }[] = [
   { url: "https://www.finanzen.net/rss/news", source: "Finanzen.net", category: "macro" },
   { url: "https://www.investing.com/rss/news_301.rss", source: "Investing.com", category: "macro" },
   { url: "https://feeds.reuters.com/reuters/businessNews", source: "Reuters", category: "macro" },
+  { url: "https://www.forexlive.com/feed/news", source: "ForexLive", category: "forex" },
 ];
 
 async function fetchFeed(feed: typeof FEEDS[0]): Promise<Article[]> {

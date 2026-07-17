@@ -6,7 +6,7 @@ import { AppSidebar, SIDEBAR_W } from "@/components/shared/app-sidebar";
 import { IconRefresh, IconTrendingUp, IconTrendingDown, IconMinus } from "@tabler/icons-react";
 
 type Sentiment = "positive" | "negative" | "neutral";
-type Category = "all" | "crypto" | "macro";
+type Category = "all" | "crypto" | "macro" | "forex";
 type SentimentFilter = "all" | Sentiment;
 
 interface Article {
@@ -17,7 +17,7 @@ interface Article {
   source: string;
   time: string;
   sentiment: Sentiment;
-  category: "crypto" | "macro";
+  category: "crypto" | "macro" | "forex";
 }
 
 const SENT_CONFIG: Record<Sentiment, { label: string; dot: string; bar: string; icon: React.ReactNode }> = {
@@ -26,9 +26,10 @@ const SENT_CONFIG: Record<Sentiment, { label: string; dot: string; bar: string; 
   neutral:  { label: "Neutral",  dot: "bg-gray-600",    bar: "bg-white/[0.04] border-white/[0.08] text-gray-500",        icon: <IconMinus className="h-3 w-3" /> },
 };
 
-const CAT_BADGE: Record<"crypto" | "macro", string> = {
+const CAT_BADGE: Record<"crypto" | "macro" | "forex", string> = {
   crypto: "text-cyan-500",
   macro:  "text-violet-400",
+  forex:  "text-amber-400",
 };
 
 export default function NewsPage() {
@@ -113,10 +114,10 @@ export default function NewsPage() {
 
         {/* Filters */}
         <div className="flex gap-2 mb-3 flex-wrap">
-          {(["all", "crypto", "macro"] as const).map(k => (
+          {(["all", "crypto", "macro", "forex"] as const).map(k => (
             <button key={k} onClick={() => setCat(k)}
               className={`text-[11px] px-3 py-1 rounded-full border transition ${cat === k ? "border-white/20 text-white bg-white/[0.07]" : "border-white/[0.06] text-gray-600 hover:text-gray-300"}`}>
-              {k === "all" ? "Alle" : k === "crypto" ? "Crypto" : "Makro & Zins"}
+              {k === "all" ? "Alle" : k === "crypto" ? "Crypto" : k === "macro" ? "Makro & Zins" : "Forex"}
             </button>
           ))}
           <div className="flex gap-1.5 ml-auto">
@@ -161,7 +162,7 @@ export default function NewsPage() {
                         {s.icon}{s.label}
                       </span>
                       <span className={`text-[9px] font-medium ${CAT_BADGE[a.category]}`}>
-                        {a.category === "crypto" ? "Crypto" : "Makro"}
+                        {a.category === "crypto" ? "Crypto" : a.category === "macro" ? "Makro" : "Forex"}
                       </span>
                       <span className="text-[10px] text-gray-700 ml-auto shrink-0">{a.time}</span>
                     </div>
