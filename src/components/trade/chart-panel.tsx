@@ -79,11 +79,17 @@ export function ChartPanel({
   }, []);
   useEffect(() => {
     reloadPositions();
+    const onClosed = () => {
+      reloadPositions();
+      // Clear trade markers when a position is closed
+      try { localStorage.removeItem("lyqdex_trades"); } catch { /* ignore */ }
+      setUserTrades([]);
+    };
     window.addEventListener("lyqdex-position-opened", reloadPositions);
-    window.addEventListener("lyqdex-position-closed", reloadPositions);
+    window.addEventListener("lyqdex-position-closed", onClosed);
     return () => {
       window.removeEventListener("lyqdex-position-opened", reloadPositions);
-      window.removeEventListener("lyqdex-position-closed", reloadPositions);
+      window.removeEventListener("lyqdex-position-closed", onClosed);
     };
   }, [reloadPositions]);
 
@@ -135,7 +141,14 @@ export function ChartPanel({
     try { setUserTrades(JSON.parse(localStorage.getItem("lyqdex_trades") || "[]")); } catch {}
   }, []);
   useEffect(() => {
-    const handler = (e: Event) => setUserTrades(p => [...p, (e as CustomEvent<UserTrade>).detail]);
+    const handler = (e: Event) => {
+      const trade = (e as CustomEvent<UserTrade>).detail;
+      setUserTrades(p => {
+        const next = [...p, trade];
+        try { localStorage.setItem("lyqdex_trades", JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    };
     window.addEventListener("lyqdex-trade", handler);
     return () => window.removeEventListener("lyqdex-trade", handler);
   }, []);
