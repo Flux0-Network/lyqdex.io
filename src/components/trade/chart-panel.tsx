@@ -79,17 +79,11 @@ export function ChartPanel({
   }, []);
   useEffect(() => {
     reloadPositions();
-    const onClosed = () => {
-      reloadPositions();
-      // Clear trade markers when a position is closed
-      try { localStorage.removeItem("lyqdex_trades"); } catch { /* ignore */ }
-      setUserTrades([]);
-    };
     window.addEventListener("lyqdex-position-opened", reloadPositions);
-    window.addEventListener("lyqdex-position-closed", onClosed);
+    window.addEventListener("lyqdex-position-closed", reloadPositions);
     return () => {
       window.removeEventListener("lyqdex-position-opened", reloadPositions);
-      window.removeEventListener("lyqdex-position-closed", onClosed);
+      window.removeEventListener("lyqdex-position-closed", reloadPositions);
     };
   }, [reloadPositions]);
 
@@ -137,21 +131,29 @@ export function ChartPanel({
     if (liveCandle.time > last.time) setHistory(prev => [...prev, liveCandle].slice(-1500));
   }, [liveCandle, history, replay.active]);
 
-  useEffect(() => {
-    try { setUserTrades(JSON.parse(localStorage.getItem("lyqdex_trades") || "[]")); } catch {}
+  // Load trade markers from Supabase positions (all-time, not just open)
+  const reloadTrades = useCallback(() => {
+    fetch("/api/positions?status=all")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.positions) return;
+        setUserTrades(d.positions.map((p: { side: string; entry_price: number; created_at: string }) => ({
+          side:  p.side === "long" ? "buy" : "sell",
+          price: p.entry_price,
+          time:  new Date(p.created_at).getTime(),
+        })));
+      })
+      .catch(() => {});
   }, []);
   useEffect(() => {
-    const handler = (e: Event) => {
-      const trade = (e as CustomEvent<UserTrade>).detail;
-      setUserTrades(p => {
-        const next = [...p, trade];
-        try { localStorage.setItem("lyqdex_trades", JSON.stringify(next)); } catch { /* ignore */ }
-        return next;
-      });
+    reloadTrades();
+    window.addEventListener("lyqdex-position-opened", reloadTrades);
+    window.addEventListener("lyqdex-position-closed", reloadTrades);
+    return () => {
+      window.removeEventListener("lyqdex-position-opened", reloadTrades);
+      window.removeEventListener("lyqdex-position-closed", reloadTrades);
     };
-    window.addEventListener("lyqdex-trade", handler);
-    return () => window.removeEventListener("lyqdex-trade", handler);
-  }, []);
+  }, [reloadTrades]);
 
   const visibleTrades = useMemo(() => {
     if (!replay.active || !candles.at(-1)) return userTrades;

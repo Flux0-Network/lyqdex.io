@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status") === "closed" ? ["closed", "liquidated"] : ["open"];
+  const statusParam = searchParams.get("status");
+  const status = statusParam === "closed" ? ["closed", "liquidated"] : statusParam === "all" ? ["open", "closed", "liquidated"] : ["open"];
 
   const { data } = await supabase
     .from("positions")
