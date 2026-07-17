@@ -64,24 +64,22 @@ export function OrderbookPanel({ symbol = "BTCUSDT" }: { symbol?: string }) {
   const base = symbol.replace(/USDT$/i, "");
 
   useEffect(() => {
+    let alive = true;
     function load() {
-      fetch(`/api/market?symbol=${symbol}`)
+      fetch(`/api/orderbook?symbol=${symbol}`)
         .then((r) => r.json())
         .then((d) => {
-          if (d.orderbook) {
-            setAsks(d.orderbook.asks.slice(0, 12).reverse());
-            setBids(d.orderbook.bids.slice(0, 12));
-          }
-          if (d.ticker) {
-            setMidPrice(d.ticker.price);
-            setChange(d.ticker.change);
-          }
+          if (!alive) return;
+          if (d.asks) setAsks(d.asks.slice(0, 12).reverse());
+          if (d.bids) setBids(d.bids.slice(0, 12));
+          if (d.price)  setMidPrice(d.price);
+          if (d.change) setChange(d.change);
         })
         .catch(() => {});
     }
     load();
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    const interval = setInterval(load, 1500);
+    return () => { alive = false; clearInterval(interval); };
   }, [symbol]);
 
   const maxTotal = Math.max(
