@@ -142,7 +142,7 @@ function TradePageInner() {
             key={key}
             onClick={() => setMobileTab(key)}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition ${
-              mobileTab === key ? "text-cyan-400" : "text-gray-600"
+              mobileTab === key ? "text-cyan-400" : "text-gray-400"
             }`}
           >
             <Icon className="h-4 w-4" />
